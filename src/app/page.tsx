@@ -1,66 +1,79 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import styles from './page.module.css';
+import { getProjects } from '@/lib/db';
+import { createProject, removeProject } from './actions';
+import Link from 'next/link';
 
-export default function Home() {
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  const projects = await getProjects();
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className={styles.main}>
+      <div className={`${styles.header} animate-fade`}>
+        <div className={styles.titleContainer}>
+          <h1 className="title-glow" style={{ fontSize: '3.5rem', fontWeight: 800 }}>UAAM HUB</h1>
+          <p className={styles.subtitle}>Unified Autonomous Android Management</p>
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </div>
+
+      <div className={`${styles.grid} animate-fade`}>
+        {/* New Project Card */}
+        <div className={`${styles.card} glass-panel ${styles.addCard}`}>
+          <h2 className={styles.cardTitle}>Add New Project</h2>
+          <form action={createProject} className={styles.form}>
+            <div className={styles.inputGroup}>
+               <input name="name" placeholder="Project Name" required />
+               <input name="gasUrl" placeholder="GAS Web App URL (optional)" />
+               <input name="androidPath" placeholder="C:\Path\To\Android\Project" required />
+            </div>
+            <button type="submit" className={styles.primaryButton}>Create Project</button>
+          </form>
         </div>
-      </main>
-    </div>
+
+        {/* Existing Project Cards */}
+        {projects.map((project) => (
+          <div key={project.id} className={`${styles.card} glass-panel`}>
+             <div className={styles.cardHeader}>
+                <div className={styles.statusDot} style={{ background: project.status === 'active' ? '#10b981' : '#f59e0b' }} />
+                <h2 className={styles.cardTitle}>{project.name}</h2>
+             </div>
+
+             <div className={styles.cardBody}>
+                <div className={styles.infoRow}>
+                   <span className={styles.label}>ID</span>
+                   <span className={styles.value}>{project.id}</span>
+                </div>
+                {project.gasUrl && (
+                  <div className={styles.infoRow}>
+                    <span className={styles.label}>GAS URL</span>
+                    <span className={styles.value}>{project.gasUrl.substring(0, 30)}...</span>
+                  </div>
+                )}
+                {!project.gasUrl && (
+                  <div className={styles.infoRow}>
+                    <span className={styles.label}>GAS URL</span>
+                    <span style={{ fontSize: '0.85rem', color: '#f59e0b' }}>未設定</span>
+                  </div>
+                )}
+                <div className={styles.infoRow}>
+                   <span className={styles.label}>PATH</span>
+                   <span className={styles.value}>{project.androidPath.substring(0, 30)}...</span>
+                </div>
+             </div>
+
+             <div className={styles.cardActions}>
+                <Link href={`/projects/${project.id}`} className={styles.secondaryButton}>View Details</Link>
+                <form action={async () => {
+                  'use server';
+                  await removeProject(project.id);
+                }}>
+                  <button type="submit" className={styles.deleteButton}>Remove</button>
+                </form>
+             </div>
+          </div>
+        ))}
+      </div>
+    </main>
   );
 }

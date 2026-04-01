@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local data
+/data/*.db
+/data/*.json
+
+# IDE and logs
+.obsidian/
+*.txt
