@@ -1,0 +1,43 @@
+
+> tmpdir@0.1.0 start C:\Engineering\Windows\UAAM
+> next start
+
+▲ Next.js 16.2.1
+- Local:         http://localhost:3001
+- Network:       http://192.168.0.186:3001
+✓ Ready in 306ms
+⨯ Error: Could not locate the bindings file. Tried:
+ → C:\Engineering\Windows\UAAM\node_modules\.pnpm\better-sqlite3@12.8.0\node_modules\better-sqlite3\build\better_sqlite3.node
+ → C:\Engineering\Windows\UAAM\node_modules\.pnpm\better-sqlite3@12.8.0\node_modules\better-sqlite3\build\Debug\better_sqlite3.node
+ → C:\Engineering\Windows\UAAM\node_modules\.pnpm\better-sqlite3@12.8.0\node_modules\better-sqlite3\build\Release\better_sqlite3.node
+ → C:\Engineering\Windows\UAAM\node_modules\.pnpm\better-sqlite3@12.8.0\node_modules\better-sqlite3\out\Debug\better_sqlite3.node
+ → C:\Engineering\Windows\UAAM\node_modules\.pnpm\better-sqlite3@12.8.0\node_modules\better-sqlite3\Debug\better_sqlite3.node
+ → C:\Engineering\Windows\UAAM\node_modules\.pnpm\better-sqlite3@12.8.0\node_modules\better-sqlite3\out\Release\better_sqlite3.node
+ → C:\Engineering\Windows\UAAM\node_modules\.pnpm\better-sqlite3@12.8.0\node_modules\better-sqlite3\Release\better_sqlite3.node
+ → C:\Engineering\Windows\UAAM\node_modules\.pnpm\better-sqlite3@12.8.0\node_modules\better-sqlite3\build\default\better_sqlite3.node
+ → C:\Engineering\Windows\UAAM\node_modules\.pnpm\better-sqlite3@12.8.0\node_modules\better-sqlite3\compiled\22.16.0\win32\x64\better_sqlite3.node
+ → C:\Engineering\Windows\UAAM\node_modules\.pnpm\better-sqlite3@12.8.0\node_modules\better-sqlite3\addon-build\release\install-root\better_sqlite3.node
+ → C:\Engineering\Windows\UAAM\node_modules\.pnpm\better-sqlite3@12.8.0\node_modules\better-sqlite3\addon-build\debug\install-root\better_sqlite3.node
+ → C:\Engineering\Windows\UAAM\node_modules\.pnpm\better-sqlite3@12.8.0\node_modules\better-sqlite3\addon-build\default\install-root\better_sqlite3.node
+ → C:\Engineering\Windows\UAAM\node_modules\.pnpm\better-sqlite3@12.8.0\node_modules\better-sqlite3\lib\binding\node-v127-win32-x64\better_sqlite3.node
+    at i (C:\Engineering\Windows\UAAM\.next\server\chunks\ssr\_0ajwkmb._.js:11:7013)
+    at j (C:\Engineering\Windows\UAAM\.next\server\chunks\ssr\_0ajwkmb._.js:21:36)
+    at l (C:\Engineering\Windows\UAAM\.next\server\chunks\ssr\[root-of-the-server]__0qsej8t._.js:2:1101)
+    at stringify (<anonymous>) {
+  tries: [
+    'C:\\Engineering\\Windows\\UAAM\\node_modules\\.pnpm\\better-sqlite3@12.8.0\\node_modules\\better-sqlite3\\build\\better_sqlite3.node',
+    'C:\\Engineering\\Windows\\UAAM\\node_modules\\.pnpm\\better-sqlite3@12.8.0\\node_modules\\better-sqlite3\\build\\Debug\\better_sqlite3.node',
+    'C:\\Engineering\\Windows\\UAAM\\node_modules\\.pnpm\\better-sqlite3@12.8.0\\node_modules\\better-sqlite3\\build\\Release\\better_sqlite3.node',
+    'C:\\Engineering\\Windows\\UAAM\\node_modules\\.pnpm\\better-sqlite3@12.8.0\\node_modules\\better-sqlite3\\out\\Debug\\better_sqlite3.node',
+    'C:\\Engineering\\Windows\\UAAM\\node_modules\\.pnpm\\better-sqlite3@12.8.0\\node_modules\\better-sqlite3\\Debug\\better_sqlite3.node',
+    'C:\\Engineering\\Windows\\UAAM\\node_modules\\.pnpm\\better-sqlite3@12.8.0\\node_modules\\better-sqlite3\\out\\Release\\better_sqlite3.node',
+    'C:\\Engineering\\Windows\\UAAM\\node_modules\\.pnpm\\better-sqlite3@12.8.0\\node_modules\\better-sqlite3\\Release\\better_sqlite3.node',
+    'C:\\Engineering\\Windows\\UAAM\\node_modules\\.pnpm\\better-sqlite3@12.8.0\\node_modules\\better-sqlite3\\build\\default\\better_sqlite3.node',
+    'C:\\Engineering\\Windows\\UAAM\\node_modules\\.pnpm\\better-sqlite3@12.8.0\\node_modules\\better-sqlite3\\compiled\\22.16.0\\win32\\x64\\better_sqlite3.node',
+    'C:\\Engineering\\Windows\\UAAM\\node_modules\\.pnpm\\better-sqlite3@12.8.0\\node_modules\\better-sqlite3\\addon-build\\release\\install-root\\better_sqlite3.node',
+    'C:\\Engineering\\Windows\\UAAM\\node_modules\\.pnpm\\better-sqlite3@12.8.0\\node_modules\\better-sqlite3\\addon-build\\debug\\install-root\\better_sqlite3.node',
+    'C:\\Engineering\\Windows\\UAAM\\node_modules\\.pnpm\\better-sqlite3@12.8.0\\node_modules\\better-sqlite3\\addon-build\\default\\install-root\\better_sqlite3.node',
+    'C:\\Engineering\\Windows\\UAAM\\node_modules\\.pnpm\\better-sqlite3@12.8.0\\node_modules\\better-sqlite3\\lib\\binding\\node-v127-win32-x64\\better_sqlite3.node'
+  ],
+  digest: '2063048993'
+}

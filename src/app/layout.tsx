@@ -12,8 +12,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "UAAM Dashboard",
-  description: "Unified Android Autonomous MCP Server",
+  title: "UAAM ダッシュボード",
+  description: "統合型 Android 自律開発管理システム",
 };
 
 export default function RootLayout({
@@ -22,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ja">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         {children}
       </body>

@@ -1,17 +1,30 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;900&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
 
 :root {
-  --background: 240 10% 3.9%;
+  /* High-Visual High-Contrast Base Colors */
+  --background: 240 6% 9%;
   --foreground: 0 0% 98%;
-  --card: 240 10% 4.9%;
-  --card-foreground: 0 0% 98%;
-  --primary: 263.4 70% 50.4%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  --accent: 263.4 70% 50.4%;
-  --border: 240 3.7% 15.9%;
-  --radius: 1rem;
+  --card: 240 6% 12%;
+  --card-hover: 240 6% 16%;
+  --radius: 0.5rem;
+
+  /* Spacing Scale (Standard Gutters) */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 16px;
+  --space-md: 32px; /* Base Gutter */
+  --space-lg: 48px;
+  --space-xl: 80px;
+
+  /* Brand Accents */
+  --indigo: 235 90% 70%;
+  --emerald: 155 85% 55%;
+  --fuchsia: 300 85% 65%;
+  
+  /* Text Colors */
+  --text-primary: 0 0% 98%;
+  --text-secondary: 240 5% 75%;
+  --text-muted: 240 5% 45%;
 }
 
 * {
@@ -23,54 +36,204 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', 'Noto Sans JP', sans-serif;
   min-height: 100vh;
-  line-height: 1.6;
-  overflow-x: hidden;
-  background-image: 
-    radial-gradient(at 0% 0%, hsla(263, 70%, 50%, 0.15) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, hsla(190, 70%, 50%, 0.1) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, hsla(280, 70%, 50%, 0.05) 0px, transparent 50%);
-  background-attachment: fixed;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  padding: var(--space-md); /* Basic Edge Gutter */
 }
 
 h1, h2, h3, h4 {
-  font-family: 'Outfit', sans-serif;
-  letter-spacing: -0.02em;
+  font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+  letter-spacing: -0.01em;
+  font-weight: 800;
+  color: hsl(var(--text-primary));
 }
 
-.glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+/* --- THE REAL GRID SYSTEM (Physical Implementation) --- */
+
+.grid-12 {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--space-md);
+}
+
+.col-span-1 { grid-column: span 1; }
+.col-span-2 { grid-column: span 2; }
+.col-span-3 { grid-column: span 3; }
+.col-span-4 { grid-column: span 4; }
+.col-span-6 { grid-column: span 6; }
+.col-span-8 { grid-column: span 8; }
+.col-span-9 { grid-column: span 9; }
+.col-span-12 { grid-column: span 12; }
+
+/* --- CORE LAYOUT ENGINE (Vanilla CSS) --- */
+.orbit-w-full { width: 100%; }
+.orbit-h-full { height: 100%; }
+.orbit-flex-row { display: flex; flex-direction: row; align-items: center; }
+.orbit-flex-col { display: flex; flex-direction: column; }
+.orbit-flex-center { justify-content: center; align-items: center; }
+.orbit-flex-between { justify-content: space-between; }
+.orbit-flex-end { justify-content: flex-end; }
+.orbit-flex-spacer { flex: 1; }
+.orbit-relative { position: relative; }
+.orbit-block { display: block; }
+.orbit-gap-xs { gap: 8px; }
+.orbit-gap-sm { gap: 16px; }
+.orbit-gap-md { gap: 32px; }
+.orbit-mt-md { margin-top: 32px; }
+.orbit-mb-md { margin-bottom: 32px; }
+.orbit-mb-lg { margin-bottom: 48px; }
+.orbit-mb-xl { margin-bottom: 80px; }
+
+@media (max-width: 1024px) {
+  .col-span-3, .col-span-4, .col-span-6, .col-span-8, .col-span-9 { grid-column: span 12; }
+}
+
+/* --- Orbit Design Components --- */
+
+.orbit-card {
+  background: hsl(var(--card));
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: var(--space-md);
+  transition: all 0.2s ease;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
-.glass-panel:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+.h-full { height: 100%; }
+.items-stretch { align-items: stretch; }
+.justify-between { justify-content: space-between; }
+
+.orbit-card-interactive {
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+}
+
+.orbit-card-interactive:hover {
+  border-color: hsla(var(--indigo), 0.3);
+  background: hsl(var(--card-hover));
   transform: translateY(-2px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6);
 }
 
-.title-glow {
-  background: linear-gradient(135deg, #fff 0%, #a855f7 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.3));
+.orbit-card-interactive:active {
+  transform: translateY(0) scale(0.98);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+.orbit-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.orbit-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: hsl(var(--text-secondary));
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.orbit-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 12px 16px;
+  color: white;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.orbit-input:focus {
+  border-color: hsl(var(--indigo));
+}
+
+.orbit-button-icon {
+  background: rgba(255, 255, 255, 0.05);
+  color: hsl(var(--text-secondary));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.orbit-button-icon:hover {
+  background: hsl(var(--indigo));
+  color: white;
+  border-color: transparent;
+}
+
+.orbit-button-primary {
+  background: hsl(var(--indigo));
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  width: 100%;
+}
+
+.orbit-button-ghost {
+  background: transparent;
+  color: hsl(var(--text-secondary));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+/* --- Brand Colors (High Glow) --- */
+
+.icon-indigo { color: hsl(var(--indigo)); background: hsla(var(--indigo), 0.15); }
+.icon-emerald { color: hsl(var(--emerald)); background: hsla(var(--emerald), 0.15); }
+.icon-fuchsia { color: hsl(var(--fuchsia)); background: hsla(var(--fuchsia), 0.15); }
+
+/* --- Special Items --- */
+
+.custom-scrollbar::-webkit-scrollbar { width: 5px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+
+@keyframes orbit-fade {
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-fade {
-  animation: fadeIn 0.6s ease-out forwards;
+/* --- MODAL SYSTEM (Pure CSS) --- */
+.orbit-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: orbit-fade 0.3s ease-out;
 }
 
-input, button {
-  font-family: inherit;
+.orbit-modal-content {
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }

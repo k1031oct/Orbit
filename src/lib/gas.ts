@@ -36,3 +36,37 @@ export async function fetchRequirements(gasUrl: string): Promise<Requirement[]> 
     throw error;
   }
 }
+
+/**
+ * GAS スプレッドシートのステータスを更新する
+ */
+export async function updateGASStatus(
+  gasUrl: string, 
+  requirementId: string, 
+  status: string, 
+  message?: string
+): Promise<void> {
+  try {
+    const res = await fetch(gasUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "updateStatus",
+        id: requirementId,
+        status,
+        message
+      })
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to update GAS status: ${res.statusText}`);
+    }
+    
+    console.log(`GAS status updated for ${requirementId}: ${status}`);
+  } catch (error) {
+    console.error("Error updating GAS status:", error);
+    throw error;
+  }
+}

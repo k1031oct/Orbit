@@ -1,0 +1,37 @@
+[package]
+name = "orbit"
+version = "0.1.0"
+description = "Orbit: The Agent Orchestrator"
+authors = ["k1031oct"]
+license = "MIT"
+repository = "https://github.com/k1031oct/orbit"
+edition = "2021"
+rust-version = "1.70"
+
+[build-dependencies]
+tauri-build = { version = "2.0.0-rc", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+tauri = { version = "2.0.0-rc", features = [] }
+tauri-plugin-shell = "2.0.0-rc"
+tauri-plugin-log = "2.0.0-rc"
+tauri-plugin-dialog = "2.0.0-rc"
+tauri-plugin-fs = "2.0.0-rc"
+tauri-plugin-process = "2.0.0-rc"
+base64 = "0.22"
+walkdir = "2.5.0"
+open = "5.3.2"
+
+[lib]
+name = "orbit_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "orbit"
+path = "src/main.rs"
+bench = false
+test = false
+doctest = false
+doc = false
