@@ -27,7 +27,18 @@
     "fs:default",
     "shell:allow-open",
     "shell:allow-spawn",
-    "shell:allow-execute",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        { "name": "git-clone", "args": [ "clone", { "validator": ".*" }, { "validator": ".*" } ], "cmd": "git" },
+        { "name": "git-pull", "args": [ "pull" ], "cmd": "git" },
+        { "name": "git-status", "args": [ "status" ], "cmd": "git" },
+        { "name": "git-version", "args": [ "version" ], "cmd": "git" },
+        { "name": "adb-cmd", "cmd": "adb", "args": [ { "validator": ".*" } ] },
+        { "name": "win-cmd", "cmd": "cmd", "args": [ { "validator": ".*" } ] },
+        { "name": "java-cmd", "cmd": "java", "args": [ { "validator": ".*" } ] }
+      ]
+    },
     "shell:default",
     "process:default",
     "log:default"

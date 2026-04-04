@@ -63,10 +63,12 @@ async fn scan_projects(base_dir: String) -> Vec<scan::ScannedProject> {
 }
 
 #[tauri::command]
-async fn scaffold_project(path: String, name: String) -> Result<(), String> {
+async fn scaffold_project(path: String, name: String, project_id: String, mcp_url: String) -> Result<(), String> {
     let project_path = PathBuf::from(&path);
+    
+    // Ensure directory exists (Bypassing JS scopes by doing it in Rust)
     if !project_path.exists() {
-        return Err("Project path does not exist".to_string());
+        fs::create_dir_all(&project_path).map_err(|e| e.to_string())?;
     }
 
     // Scaffold AGENTS.md if missing
@@ -81,6 +83,30 @@ async fn scaffold_project(path: String, name: String) -> Result<(), String> {
     if !data_flow_path.exists() {
         let content = format!("# DATA_FLOW for {}\n\n## システム構造\n└─ プロジェクトルート\n", name);
         fs::write(data_flow_path, content).map_err(|e| e.to_string())?;
+    }
+
+    // 1. Scaffold ORBIT.md (Portal Link)
+    let orbit_md_path = project_path.join("ORBIT.md");
+    let orbit_content = format!(
+        "# ORBIT MISSION NODE: {}\n\n## Orchestrator Link\n- **Project ID**: {}\n- **MCP Endpoint**: {}\n\n## Governance\n- This node is managed by the Orbit Command Center.\n- Do not remove this file; it is required for AI-Orchestrator synchronization.\n",
+        name, project_id, mcp_url
+    );
+    fs::write(orbit_md_path, orbit_content).map_err(|e| e.to_string())?;
+
+    // 2. Auto-update .gitignore
+    let gitignore_path = project_path.join(".gitignore");
+    let mut gitignore_content = if gitignore_path.exists() {
+        fs::read_to_string(&gitignore_path).unwrap_or_default()
+    } else {
+        String::new()
+    };
+
+    if !gitignore_content.contains("ORBIT.md") {
+        if !gitignore_content.is_empty() && !gitignore_content.ends_with('\n') {
+            gitignore_content.push('\n');
+        }
+        gitignore_content.push_str("\n# Orbit Portal\nORBIT.md\n");
+        fs::write(gitignore_path, gitignore_content).map_err(|e| e.to_string())?;
     }
 
     Ok(())

@@ -1,222 +1,292 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { getProject, updateProject, getLocalRequirements, getDecisionLogs, addLocalRequirement, changeLocalRequirementStatus, removeLocalRequirement } from '@/lib/db';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, RefreshCw, Layers, ShieldCheck, Database, Plus, Trash2, Save, Globe } from 'lucide-react';
-import OrbitalToolkit from '@/components/OrbitalToolkit';
+import { 
+  ArrowLeft, Plus, Trash2, ShieldCheck, 
+  RefreshCw, CheckCircle2, 
+  History, Target, Layers, Globe, Terminal,
+  Play, Rocket, Bot, ShieldAlert, X
+} from 'lucide-react';
+import { useProjectDetailViewModel } from '../../../viewmodels/ProjectDetailViewModel';
+import { LocalRequirement, DecisionLog } from '../../../lib/models/types';
+import { ConsoleViewer } from '../../../components/ConsoleViewer';
 
 function ProjectDetailContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
-  const [project, setProject] = useState<any>(null);
-  const [localRequirements, setLocalRequirements] = useState<any[]>([]);
-  const [decisionLogs, setDecisionLogs] = useState<any[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
+  
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  
+  const { 
+    state, 
+    loadData, 
+    handleAddRequirement, 
+    handleChangeRequirementStatus, 
+    handleRemoveRequirement, 
+    handleScanProject,
+    handleSyncRemote,
+    handleBuild,
+    handleDeploy,
+    toggleConsole,
+    appendLog
+  } = useProjectDetailViewModel(id);
+
+  const { project, requirements, logs, isLoading, isScanning, isBuilding, isDeploying } = state;
 
   useEffect(() => {
-    if (id) loadData(id);
-  }, [id]);
+    if (id) loadData();
+  }, [id, loadData]);
 
-  async function loadData(projectId: string) {
-    const p = await getProject(projectId);
-    setProject(p);
-    const reqs = await getLocalRequirements(projectId);
-    setLocalRequirements(reqs);
-    const logs = await getDecisionLogs(projectId);
-    setDecisionLogs(logs);
+  if (isLoading) {
+    return <div className="orbit-w-full h-screen flex justify-center items-center text-white/10 font-black uppercase tracking-[0.4em] animate-pulse italic">Initializing Control Engine...</div>;
   }
 
-  async function handleEditProject(e: React.FormEvent<HTMLFormElement>) {
+  if (!project) {
+    return (
+      <div className="orbit-w-full h-screen flex flex-col justify-center items-center gap-10 text-white">
+        <h1 className="orbit-brand-title text-4xl">Node Not Found</h1>
+        <Link href="/" className="orbit-button orbit-button-primary px-10 py-5">Return to Registry</Link>
+      </div>
+    );
+  }
+
+  const onAddReqSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!id) return;
-    setIsSaving(true);
     const formData = new FormData(e.currentTarget);
-    const fields = {
-      name: formData.get('name') as string,
-      gasUrl: formData.get('gasUrl') as string || undefined,
-      gitUrl: formData.get('gitUrl') as string || undefined,
-      description: formData.get('description') as string || undefined,
-    };
-    await updateProject(id, fields);
-    await loadData(id);
-    setIsSaving(false);
-  }
-
-  async function handleAddLocalReq(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!id) return;
-    const formData = new FormData(e.currentTarget);
-    await addLocalRequirement({
-      projectId: id,
-      title: formData.get('title') as string,
-      description: formData.get('description') as string,
-      target: formData.get('target') as string,
-    });
-    await loadData(id);
-    (e.target as HTMLFormElement).reset();
-  }
-
-  if (!project) return <div className="p-20 text-center font-mono">ノードに接続中...</div>;
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+    const target = formData.get('target') as string;
+    handleAddRequirement(title, description, target);
+    setIsAddModalOpen(false);
+  };
 
   return (
-    <div className="animate-fade orbit-w-full" style={{ padding: '32px' }}>
-      <header className="orbit-flex-row orbit-w-full orbit-mb-lg" style={{ height: '64px' }}>
-        <div className="orbit-flex-col">
-          <Link href="/" className="orbit-flex-row orbit-gap-xs text-gray-600 hover:text-indigo-400 transition-all text-[10px] font-bold uppercase tracking-widest orbit-mb-xs">
-            <ArrowLeft size={14} /> 戻る
+    <div className="h-screen overflow-hidden flex flex-col" style={{ background: '#050505' }}>
+      
+      {/* 🚀 Header: Stabilized Quad-Directional Layout */}
+      <header className="shrink-0 flex flex-row items-center justify-between px-10 py-8 border-b border-white/[0.03] bg-black/40 backdrop-blur-xl z-20">
+        
+        {/* Top-Left: Identity Area */}
+        <div className="flex flex-row items-center gap-8">
+          <Link href="/" className="orbit-button orbit-button-ghost w-14 h-14 rounded-2xl flex justify-center items-center p-0 border-white/10">
+            <ArrowLeft size={20} />
           </Link>
-          <div className="orbit-flex-row orbit-gap-sm">
-             <div className="w-5 h-5 bg-indigo-500 rounded-sm"></div>
-             <h1 className="text-4xl font-black tracking-tighter uppercase italic text-white leading-none">{project.name}</h1>
-             <div className="orbit-flex-row orbit-gap-xs text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-black/40 px-3 py-1 rounded-full border border-white/5">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                接続中
+          <div className="flex flex-col">
+            <div className="flex flex-row items-center gap-4">
+              <h1 className="orbit-brand-title text-4xl leading-none">{project.name}</h1>
+              <div className="orbit-badge orbit-badge-active">
+                <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.4)]" />
+                <span className="text-[10px]">Mission Active</span>
+              </div>
+            </div>
+            <p className="text-[9px] text-white/20 font-mono uppercase tracking-[0.3em] mt-1 italic">ENDPOINT: <span className="text-white/40">{project.androidPath}</span></p>
+          </div>
+        </div>
+        
+        {/* Top-Right: Unified Control Center */}
+        <div className="flex flex-row items-center gap-6">
+           
+           <button 
+             onClick={() => setIsAddModalOpen(true)}
+             className="orbit-button orbit-button-primary px-10 py-5 rounded-2xl shadow-[0_20px_40px_rgba(255,255,255,0.05)]"
+           >
+              <Plus size={18} />
+              <span>New Task</span>
+           </button>
+
+           <div className="w-[1px] h-8 bg-white/5 mx-2" />
+
+           <div className="flex flex-row p-1.5 bg-white/[0.02] border border-white/5 rounded-2xl items-center">
+             <button onClick={handleSyncRemote} className="orbit-button orbit-button-ghost border-none hover:bg-white/5 px-5 py-3 group">
+                <Globe size={16} className="text-indigo-400 group-hover:scale-110 transition-transform" />
+                <span className="text-indigo-400">Sync</span>
+             </button>
+             <div className="w-[1px] h-4 bg-white/5 mx-1" />
+             <button onClick={handleBuild} disabled={isBuilding} className="orbit-button orbit-button-ghost border-none hover:bg-white/5 px-5 py-3 group disabled:opacity-30">
+                <Play size={16} className={`group-hover:scale-110 ${isBuilding ? 'animate-pulse text-emerald-500' : 'text-white/20'}`} />
+                <span className={isBuilding ? 'text-emerald-400 font-black' : 'text-white/20'}>Build</span>
+             </button>
+             <button onClick={handleDeploy} disabled={isDeploying} className="orbit-button orbit-button-ghost border-none hover:bg-white/5 px-5 py-3 group disabled:opacity-30">
+                <Rocket size={16} className={`group-hover:scale-110 ${isDeploying ? 'animate-bounce text-indigo-400' : 'text-indigo-400'}`} />
+                <span className="text-indigo-400 font-black">Deploy</span>
+             </button>
+           </div>
+
+           <button onClick={handleScanProject} disabled={isScanning} className="orbit-button orbit-button-ghost w-14 h-14 border-white/5 rounded-2xl p-0 hover:bg-white/5">
+              <RefreshCw size={22} className={isScanning ? 'animate-spin text-white' : 'opacity-20'} />
+           </button>
+        </div>
+      </header>
+
+      {/* 🎯 Main Canvas: Physical Grid Container */}
+      <main className="flex-1 overflow-y-auto px-10 py-12 custom-scrollbar bg-black/10">
+        <div className="max-w-6xl mx-auto flex flex-col gap-12">
+          
+          <div className="flex flex-col gap-6">
+             <div className="flex flex-row items-center gap-3 ml-2 opacity-30">
+                <Target size={18} />
+                <h2 className="text-[10px] font-black uppercase tracking-[0.5em] italic text-white">Objective Stream</h2>
+             </div>
+
+             <div className="flex flex-col gap-4">
+               {requirements.length === 0 ? (
+                 <div className="orbit-card py-40 border-dashed border-white/5 flex flex-col justify-center items-center gap-5 opacity-10">
+                    <Layers size={48} />
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em]">Empty Canvas</span>
+                 </div>
+               ) : (
+                 requirements.map((req: LocalRequirement) => (
+                    <div key={req.id} className="orbit-group orbit-relative orbit-card orbit-card-interactive p-12 pr-40 transition-all hover:bg-indigo-500/[0.01]">
+                       <div className="flex flex-row items-start gap-8">
+                          <button 
+                            onClick={() => handleChangeRequirementStatus(req.id, req.status === 'Done' ? 'Todo' : 'Done')}
+                            className={`transition-all hover:scale-110 mt-1 ${req.status === 'Done' ? 'text-emerald-500' : 'text-white/10 hover:text-white'}`}
+                          >
+                             <CheckCircle2 size={32} />
+                          </button>
+                          <div className="flex flex-col gap-2">
+                             <div className="flex flex-row items-center gap-3">
+                                <span className={`text-xl font-black italic tracking-tighter uppercase ${req.status === 'Done' ? 'line-through text-white/10' : 'text-white'}`}>{req.title}</span>
+                                {req.target && <span className="orbit-badge bg-indigo-500/10 border-indigo-500/10 text-indigo-400 px-2 py-0.5">{req.target}</span>}
+                             </div>
+                             {req.description && <p className="text-xs text-white/30 leading-relaxed font-mono italic max-w-xl">{req.description}</p>}
+                          </div>
+                       </div>
+                       
+                       {/* 🗑️ Trash: Anchored Right Centralized */}
+                       <button 
+                        onClick={() => handleRemoveRequirement(req.id)}
+                        className="orbit-absolute-right on-orbit-group-hover w-12 h-12 bg-white/[0.02] border border-white/5 rounded-2xl flex justify-center items-center text-white/10 hover:text-rose-500 hover:bg-rose-500/10 transition-all"
+                       >
+                          <Trash2 size={20} />
+                       </button>
+                    </div>
+                 ))
+               )}
+             </div>
+          </div>
+          
+          <div className="w-[1px] h-24 bg-white/[0.03] mx-auto" />
+
+          {/* Monitoring Area: Physical Spacing */}
+          <div className="flex flex-row items-stretch gap-8 pb-32">
+             <div className="flex-1 orbit-card p-12 bg-rose-500/[0.01] border-rose-500/10">
+                <div className="flex flex-row items-center gap-4 mb-8">
+                   <ShieldAlert size={20} className="text-rose-500/50" />
+                   <h3 className="text-[11px] font-black uppercase tracking-[0.3em] italic text-rose-500/80">Physical Guardrails</h3>
+                </div>
+                <div className="flex flex-col gap-4">
+                   <div className="p-6 bg-black/40 rounded-2xl border border-white/[0.03]">
+                      <div className="text-[10px] font-black text-rose-500 uppercase tracking-widest italic opacity-60 mb-2">Strict No-XML</div>
+                      <p className="text-[10px] text-white/20 font-mono leading-relaxed">Core layout inflation via XML is physically blocked by the brand harvester system.</p>
+                   </div>
+                </div>
+             </div>
+
+             <div className="flex-1 orbit-card p-12 bg-white/[0.01]">
+                <div className="flex flex-row items-center gap-4 mb-8">
+                   <ShieldCheck size={20} className="text-emerald-500/50" />
+                   <h3 className="text-[11px] font-black uppercase tracking-[0.3em] italic text-white/60">Node Metrics</h3>
+                </div>
+                <div className="flex flex-col gap-6">
+                   <div className="flex justify-between border-b border-white/5 pb-6">
+                      <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Compiler v.</span>
+                      <span className="text-[10px] font-mono text-white/40">{project.latestVersion || 'STAB_V0.4.1'}</span>
+                   </div>
+                   <div className="flex justify-between">
+                      <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Node Flow</span>
+                      <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest italic">Connection High</span>
+                   </div>
+                </div>
              </div>
           </div>
         </div>
+      </main>
 
-        <div className="orbit-flex-spacer" />
+      {/* 🛡️ Consolidated Bottom HUD: Rigidly Anchored */}
+      <footer className="shrink-0 h-16 border-t border-white/[0.03] bg-black/80 backdrop-blur-3xl px-10 flex flex-row items-center justify-between z-20">
+         <div className="flex flex-row items-center gap-12 min-w-0">
+            <div className="flex flex-row items-center gap-3">
+               <Bot size={18} className="text-white/20 animate-pulse" />
+               <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/30 italic">Control Engine</span>
+            </div>
+            <div className="flex flex-row items-center gap-4 min-w-0 opacity-20">
+               <History size={16} className="shrink-0" />
+               <p className="text-[11px] font-mono truncate tracking-tight text-white/80 uppercase">
+                 {logs.length > 0 ? `Latest: ${logs[0].decision}` : 'Monitoring autonomous heartbeat signals...'}
+               </p>
+            </div>
+         </div>
 
-        <OrbitalToolkit projectPath={project.androidPath} gitUrl={project.gitUrl} />
-      </header>
+         <div className="flex flex-row items-center gap-8">
+            <div className="flex flex-row items-center gap-4 text-[9px] font-black tracking-[0.5em] text-white/10 uppercase italic">
+               <span>Mem: Ready</span>
+               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]" />
+               <span>Buffer: Clean</span>
+            </div>
+            <button onClick={() => toggleConsole()} className="w-10 h-10 flex justify-center items-center rounded-xl bg-white/[0.02] border border-white/5 text-white/20 hover:text-white transition-all p-0">
+                <Terminal size={18} className={state.isConsoleVisible ? 'text-indigo-400' : ''} />
+            </button>
+         </div>
+      </footer>
 
-      <div className="grid-12 orbit-w-full orbit-items-stretch">
-        
-        {/* Node Control Section (4 Col) */}
-        <div className="col-span-4 orbit-flex-col orbit-h-full">
-            <section className="orbit-card bg-black/5 border-white/[0.05] orbit-h-full">
-              <div className="orbit-flex-row orbit-flex-between orbit-mb-md">
-                <div className="orbit-flex-row orbit-gap-xs text-indigo-400">
-                  <Database size={18} />
-                  <h2 className="text-sm font-extrabold uppercase tracking-widest italic text-white">構成設定</h2>
-                </div>
-                <form onSubmit={handleEditProject} id="config-form">
-                   <button type="submit" disabled={isSaving} className="orbit-button-icon" title="設定を保存">
-                     {isSaving ? <RefreshCw size={20} className="animate-spin" /> : <Save size={20} />}
-                   </button>
-                </form>
-              </div>
-              
-              <div className="orbit-flex-col orbit-gap-sm flex-1">
-                <div className="orbit-input-group">
-                  <label className="orbit-label">エイリアス</label>
-                  <input form="config-form" name="name" defaultValue={project.name} className="orbit-input" />
-                </div>
-                <div className="orbit-input-group">
-                  <label className="orbit-label">メタデータ同期 (GAS)</label>
-                  <input form="config-form" name="gasUrl" defaultValue={project.gasUrl ?? ''} className="orbit-input font-mono text-emerald-400/60" placeholder="https://..." />
-                </div>
-                <div className="orbit-input-group">
-                  <label className="orbit-label">リポジトリ (Git)</label>
-                  <input form="config-form" name="gitUrl" defaultValue={project.gitUrl ?? ''} className="orbit-input font-mono text-fuchsia-400/60" placeholder="https://..." />
-                </div>
-              </div>
-              <div className="orbit-mt-md pt-6 border-t border-white/5 text-[10px] text-gray-600 font-mono orbit-flex-row orbit-gap-xs uppercase tracking-widest">
-                 <Globe size={14} /> {project.androidPath}
-              </div>
-            </section>
-        </div>
-
-        {/* New Objective Section (8 Col) */}
-        <div className="col-span-8 orbit-h-full">
-            <section className="orbit-card bg-black/5 border-white/[0.05] orbit-h-full">
-              <div className="orbit-flex-row orbit-gap-sm orbit-mb-md">
-                <div className="orbit-flex-row orbit-gap-xs text-indigo-400">
-                  <Plus size={22} />
-                  <h2 className="text-sm font-extrabold uppercase tracking-widest italic text-white">新規目標</h2>
-                </div>
-              </div>
-              
-              <form onSubmit={handleAddLocalReq} className="orbit-flex-col orbit-gap-md flex-1">
-                <div className="grid-12 orbit-w-full">
-                  <div className="col-span-6 orbit-input-group">
-                    <label className="orbit-label">タイトル</label>
-                    <input name="title" className="orbit-input" placeholder="ロジックの実装..." required />
-                  </div>
-                  <div className="col-span-6 orbit-input-group">
-                    <label className="orbit-label">ターゲット</label>
-                    <input name="target" className="orbit-input font-mono text-indigo-400/60" placeholder="Component::Class" />
-                  </div>
-                </div>
-                <div className="orbit-input-group">
-                  <label className="orbit-label">指示・要件の詳細</label>
-                  <textarea name="description" className="orbit-input min-h-[160px] resize-none italic" placeholder="要件の詳細を入力してください..." />
-                </div>
-                <div className="orbit-flex-row orbit-flex-end">
-                   <button type="submit" className="orbit-button-primary py-5 w-auto px-12">
-                      目標を確定して追加
-                   </button>
-                </div>
-              </form>
-            </section>
-        </div>
-
-        {/* Decision Logs (4 Col) */}
-        <div className="col-span-4 orbit-mt-md">
-            <section className="orbit-card border-white/[0.05] orbit-h-full">
-              <div className="orbit-flex-row orbit-gap-xs orbit-mb-md text-indigo-400">
-                <Database size={18} />
-                <h2 className="text-sm font-extrabold uppercase tracking-widest italic text-white">意思決定ログ</h2>
-              </div>
-              <div className="orbit-flex-col orbit-gap-sm max-h-[360px] overflow-y-auto pr-2 custom-scrollbar">
-                {decisionLogs.length === 0 ? (
-                  <div className="py-20 text-center text-gray-700 text-[10px] uppercase font-bold tracking-[0.2em]">ログが見つかりません</div>
-                ) : (
-                  decisionLogs.map((log) => (
-                    <div key={log.id} className="p-5 bg-black/20 border border-white/5 rounded-lg hover:border-white/10 transition-all">
-                       <p className="text-[12px] font-bold text-gray-300 leading-tight orbit-mb-xs">{log.decision}</p>
-                       <span className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">{log.category} | {new Date(log.timestamp).toLocaleDateString()}</span>
+      {/* 🚀 System Modal Layer: Physics Fixed */}
+      {isAddModalOpen && (
+        <div className="orbit-modal-overlay">
+           <div className="orbit-modal-content orbit-card" style={{ padding: '0px' }}>
+              <div className="flex flex-row items-center justify-between p-10 border-b border-white/5">
+                 <div className="flex flex-row items-center gap-4">
+                    <div className="w-12 h-12 bg-white/5 rounded-2xl flex justify-center items-center text-white/40">
+                       <Plus size={24} />
                     </div>
-                  ))
-                )}
+                    <h2 className="orbit-brand-title text-2xl">Activate Task</h2>
+                 </div>
+                 <button onClick={() => setIsAddModalOpen(false)} className="w-10 h-10 flex justify-center items-center rounded-full hover:bg-white/5 text-white/10 transition-all">
+                    <X size={20} />
+                 </button>
               </div>
-            </section>
-        </div>
 
-        {/* Active Objectives (8 Col) */}
-        <div className="col-span-8 orbit-mt-md">
-            <section className="orbit-card bg-black/5 border-white/[0.05] orbit-h-full">
-              <div className="orbit-flex-row orbit-gap-xs orbit-mb-lg text-indigo-400">
-                <Layers size={18} />
-                <h2 className="text-sm font-extrabold uppercase tracking-widest italic text-white">進行中の目標</h2>
-              </div>
-              
-              <div className="orbit-flex-col orbit-gap-sm">
-                 {localRequirements.length === 0 ? (
-                   <div className="py-24 text-center text-gray-700 font-bold text-[11px] uppercase tracking-[0.4em]">待機中</div>
-                 ) : (
-                   localRequirements.map((req) => (
-                     <div key={req.id} className="orbit-card orbit-flex-row orbit-gap-md border-white/5 bg-black/10">
-                        <div className="flex-shrink-0">
-                           <div className="w-12 h-12 rounded-xl orbit-flex-row orbit-flex-center icon-indigo">
-                              <Plus size={24} />
-                           </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                           <h3 className="text-lg font-bold text-white orbit-mb-xs leading-none uppercase italic tracking-tight">{req.title}</h3>
-                           <p className="text-[13px] text-gray-500 leading-relaxed italic">{req.description}</p>
-                           {req.target && <span className="inline-block orbit-mt-md text-[10px] text-indigo-400 font-mono uppercase bg-indigo-500/10 px-3 py-1 rounded border border-indigo-500/20">{req.target}</span>}
-                        </div>
-                        <div className="orbit-flex-row orbit-gap-xs">
-                           <button className="orbit-button-ghost">完了</button>
-                           <button className="orbit-button-icon border-red-500/10 text-gray-700 hover:bg-red-500 hover:text-white" title="削除"><Trash2 size={18} /></button>
-                        </div>
-                     </div>
-                   ))
-                 )}
-              </div>
-            </section>
+              <form onSubmit={onAddReqSubmit} className="p-10 flex flex-col gap-10">
+                 <div className="flex flex-col">
+                    <label className="orbit-label">Objective Label</label>
+                    <input name="title" className="orbit-input py-6 px-10 text-xl font-black" placeholder="Define mission goal..." required autoFocus />
+                 </div>
+                 
+                 <div className="flex flex-col">
+                    <label className="orbit-label">Domain Scope</label>
+                    <input name="target" className="orbit-input py-5 px-8 text-sm font-mono" placeholder="UI, Logic, DB etc..." />
+                 </div>
+
+                 <div className="flex flex-col">
+                    <label className="orbit-label">Engineering Spec</label>
+                    <textarea name="description" className="orbit-input py-6 px-10 text-sm font-mono min-h-[140px] leading-relaxed" placeholder="Detailed engineering documentation..." />
+                 </div>
+
+                 <button type="submit" className="orbit-button orbit-button-primary w-full py-7 rounded-[32px] shadow-[0_30px_60px_-10px_rgba(255,255,255,0.05)]">
+                    Activate Engineering Cycle
+                 </button>
+              </form>
+           </div>
         </div>
-      </div>
+      )}
+
+      {/* Real-time Console Drawer */}
+      <ConsoleViewer 
+        logs={state.consoleLogs} 
+        isVisible={state.isConsoleVisible} 
+        onClose={() => toggleConsole(false)}
+        onClear={() => {}}
+      />
     </div>
   );
 }
 
 export default function ProjectDetail() {
   return (
-    <Suspense fallback={<div className="p-20 text-center font-mono">データを読み込み中...</div>}>
+    <Suspense fallback={<div>Loading Page...</div>}>
       <ProjectDetailContent />
     </Suspense>
   );

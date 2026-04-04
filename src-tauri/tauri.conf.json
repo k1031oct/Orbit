@@ -1,6 +1,6 @@
 {
   "productName": "Orbit",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "identifier": "com.k1031oct.orbit",
   "build": {
     "frontendDist": "../out",
@@ -35,6 +35,12 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "publisher": "k1031oct"
+    "publisher": "k1031oct",
+    "windows": {
+      "wix": {
+        "language": "en-US",
+        "upgradeCode": "E501FD44-C5DA-4418-8473-E1A54FDCD8E4"
+      }
+    }
   }
 }
