@@ -304,8 +304,8 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
 
         await invoke('run_shell_command', { 
           path: state.project.androidPath, 
-          command: 'start', 
-          args: ["\"\"", `"${binaryPath}"`] 
+          command: 'explorer', 
+          args: [`"${binaryPath}"`] 
         });
         showToast('アプリケーションを起動しました', 'success');
       } else {
