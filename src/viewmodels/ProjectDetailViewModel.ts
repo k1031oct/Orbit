@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Project, LocalRequirement, DecisionLog } from '../lib/models/types';
 import { useToast } from '../context/ToastContext';
 import { LogRepository } from '../lib/repositories/LogRepository';
@@ -28,6 +28,17 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
     consoleLogs: [],
     isConsoleVisible: false
   });
+  
+  const logcatStopperRef = useRef<(() => Promise<void>) | null>(null);
+
+  // コンポーネントのアンマウント時にログを停止
+  useEffect(() => {
+    return () => {
+      if (logcatStopperRef.current) {
+        logcatStopperRef.current();
+      }
+    };
+  }, []);
 
   /**
    * コンソールにログを追記する (最大500行)
@@ -228,12 +239,18 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
   const handleBuild = async () => {
     if (!state.project || state.isBuilding) return;
     
-    // Tauri プロジェクトかどうかの簡易判定
-    const tauriProjects = ['WeatherNote', 'Schedule', 'Memo', 'All In One'];
-    const isTauri = tauriProjects.some(name => state.project!.androidPath.includes(name) || state.project!.androidPath.includes('手帳'));
+    // プラットフォーム判定
+    const isTauri = state.project.platform === 'WINDOWS_TAURI';
+    const isAndroid = state.project.platform === 'ANDROID_KOTLIN';
     
     setState(prev => ({ ...prev, isBuilding: true, isConsoleVisible: true }));
     appendLog(isTauri ? '--- Windows/Tauri Build Started ---' : '--- Android Build Started ---');
+
+    // 以前のログストリームがあれば停止
+    if (logcatStopperRef.current) {
+      await logcatStopperRef.current();
+      logcatStopperRef.current = null;
+    }
 
     try {
       if (isTauri) {
@@ -286,9 +303,11 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
    */
   const handleDeploy = async () => {
     if (!state.project || state.isDeploying) return;
+    const project = state.project;
 
-    const tauriProjects = ['WeatherNote', 'Schedule', 'Memo', 'All In One'];
-    const isTauri = tauriProjects.some(name => state.project!.androidPath.includes(name) || state.project!.androidPath.includes('手帳'));
+    // プラットフォーム判定
+    const isTauri = project.platform === 'WINDOWS_TAURI';
+    const isAndroid = project.platform === 'ANDROID_KOTLIN';
 
     setState(prev => ({ ...prev, isDeploying: true, isConsoleVisible: true }));
     appendLog(isTauri ? '--- Windows Application Launch Started ---' : '--- Deployment Cycle Started ---');
@@ -298,20 +317,19 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
         appendLog('Launching Windows Application (Tauri Binary)...');
         const { invoke } = await import('@tauri-apps/api/core');
         
-        // productName が tauri-app なのでターゲット名を指定
         const binaryName = "tauri-app.exe";
-        const binaryPath = `${state.project.androidPath}\\src-tauri\\target\\release\\${binaryName}`;
+        const binaryPath = `${project.androidPath}\\src-tauri\\target\\release\\${binaryName}`;
 
         await invoke('run_shell_command', { 
-          path: state.project.androidPath, 
+          path: project.androidPath, 
           command: 'explorer', 
           args: [`"${binaryPath}"`] 
         });
         showToast('アプリケーションを起動しました', 'success');
-      } else {
+      } else if (isAndroid) {
         const { AndroidExecutor } = await import('../lib/android');
         appendLog('Searching for debug APK...');
-        const apkPath = await AndroidExecutor.findApk(state.project.androidPath);
+        const apkPath = await AndroidExecutor.findApk(project.androidPath);
         
         if (!apkPath) {
           appendLog('[ERROR] APK not found. Please BUILD the project first.');
@@ -326,7 +344,17 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
         );
 
         if (installSuccess) {
-          appendLog('Installation Successful.');
+          appendLog('Installation Successful. Launching App...');
+          
+          // 起動
+          const pkgName = await AndroidExecutor.getPackageName(project.androidPath) || 'com.k1031oct.nfa';
+          await AndroidExecutor.launchApp(pkgName, (line) => appendLog(line));
+          
+          // ログストリーミング開始
+          appendLog(`[LOGCAT] Starting session for ${pkgName}...`);
+          if (logcatStopperRef.current) await logcatStopperRef.current();
+          logcatStopperRef.current = await AndroidExecutor.streamLogcat(pkgName, (line) => appendLog(`[ANDROID] ${line}`));
+          
           showToast('アプリケーションを起動しました', 'success');
         } else {
           throw new Error('Installation Failed.');
@@ -338,7 +366,7 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
       showToast('デプロイ中にエラーが発生しました', 'error');
 
       await LogRepository.add({
-        projectId: state.project.id,
+        projectId: project.id,
         category: 'DEPLOY_ERROR',
         decision: 'Deployment cycle failed',
         reason: errorMsg

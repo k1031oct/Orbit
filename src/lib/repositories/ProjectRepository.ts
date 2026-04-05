@@ -24,8 +24,8 @@ export class ProjectRepository {
     };
 
     db.run(
-      'INSERT INTO projects (id, name, gasUrl, gitUrl, androidPath, status, isRemoteSyncEnabled) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [newProject.id, newProject.name, newProject.gasUrl ?? null, newProject.gitUrl ?? null, newProject.androidPath, newProject.status, newProject.isRemoteSyncEnabled ?? 0]
+      'INSERT INTO projects (id, name, platform, gasUrl, gitUrl, androidPath, status, isRemoteSyncEnabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [newProject.id, newProject.name, newProject.platform, newProject.gasUrl ?? null, newProject.gitUrl ?? null, newProject.androidPath, newProject.status, newProject.isRemoteSyncEnabled ?? 0]
     );
 
     await saveDb();
@@ -56,6 +56,7 @@ export class ProjectRepository {
     const values: any[] = [];
 
     if (fields.name !== undefined) { setClauses.push('name = ?'); values.push(fields.name); }
+    if (fields.platform !== undefined) { setClauses.push('platform = ?'); values.push(fields.platform); }
     if (fields.gasUrl !== undefined) { setClauses.push('gasUrl = ?'); values.push(fields.gasUrl); }
     if (fields.gitUrl !== undefined) { setClauses.push('gitUrl = ?'); values.push(fields.gitUrl); }
     if (fields.androidPath !== undefined) { setClauses.push('androidPath = ?'); values.push(fields.androidPath); }

@@ -6,6 +6,7 @@ export interface Settings {
 export interface Project {
   id: string;
   name: string;
+  platform: 'ANDROID_KOTLIN' | 'WINDOWS_TAURI' | 'WEB_NEXTJS' | 'GAS_TS' | 'OTHER';
   gasUrl?: string;
   gitUrl?: string;
   androidPath: string;

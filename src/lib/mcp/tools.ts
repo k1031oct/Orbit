@@ -7,6 +7,23 @@ import fs from 'fs';
 import path from 'path';
 
 /**
+ * ファイル構成からプラットフォームを推測する
+ */
+export async function detectPlatform(projectPath: string): Promise<string> {
+  if (fs.existsSync(path.join(projectPath, 'build.gradle.kts')) || fs.existsSync(path.join(projectPath, 'build.gradle'))) {
+    return 'ANDROID_KOTLIN';
+  }
+  if (fs.existsSync(path.join(projectPath, 'src-tauri'))) {
+    return 'WINDOWS_TAURI';
+  }
+  if (fs.existsSync(path.join(projectPath, 'package.json'))) {
+    const pkg = JSON.parse(fs.readFileSync(path.join(projectPath, 'package.json'), 'utf-8'));
+    if (pkg.dependencies?.next) return 'WEB_NEXTJS';
+  }
+  return 'OTHER';
+}
+
+/**
  * AI エージェント（MCP）に公開する具体的ツールの実体
  */
 export const MCPTools = {
@@ -43,7 +60,7 @@ export const MCPTools = {
   },
 
   /**
-   * Android プロジェクトをビルドし、詳細なエラーを返す
+   * プロジェクトのプラットフォームに応じたビルドを実行
    */
   async buildNode(projectId: string, onOutput?: (line: string) => void): Promise<string> {
     const project = await ProjectRepository.getById(projectId);
@@ -56,37 +73,38 @@ export const MCPTools = {
       else console.log(`[MCP BUILD] ${line}`);
     };
 
-    const isTauri = fs.existsSync(path.join(project.androidPath, 'src-tauri'));
+    // プラットフォーム別のビルドロジック
+    switch (project.platform) {
+      case 'WINDOWS_TAURI':
+        if (onOutput) onOutput('[ORBIT] Platform: WINDOWS_TAURI. Starting production build...');
+        try {
+          const { exec } = await import('child_process');
+          const { promisify } = require('util');
+          const execAsync = promisify(exec);
+          const { stdout, stderr } = await execAsync('npm run build', { cwd: project.androidPath });
+          if (onOutput) onOutput(stdout);
+          if (stderr && onOutput) onOutput(`[WARN] ${stderr}`);
+          return 'Build Success (Tauri/Windows)';
+        } catch (e) {
+          return `Tauri Build Failed: ${e}`;
+        }
 
-    if (isTauri) {
-      // Windows/Tauri ビルドの実行
-      if (onOutput) onOutput('[ORBIT] Detecting Tauri project. Starting production build...');
-      const { exec } = await import('child_process');
-      const { promisify } = require('util');
-      const execAsync = promisify(exec);
-      
-      try {
-        const { stdout, stderr } = await execAsync('npm run build', { cwd: project.androidPath });
-        if (onOutput) onOutput(stdout);
-        if (stderr && onOutput) onOutput(`[WARN] ${stderr}`);
-        return 'Build Success (Tauri/Windows)';
-      } catch (e) {
-        return `Tauri Build Failed: ${e}`;
-      }
+      case 'ANDROID_KOTLIN':
+        if (onOutput) onOutput('[ORBIT] Platform: ANDROID_KOTLIN. Running Gradle assembleDebug...');
+        const success = await AndroidExecutor.runGradle(
+          project.androidPath, 
+          ['assembleDebug'], 
+          captureOutput
+        );
+        if (!success) {
+          const errorReport = AndroidExecutor.parseBuildLog(fullLog);
+          return `Build Failed.\n${errorReport}`;
+        }
+        return 'Build Success (Native Android)';
+
+      default:
+        return `Error: Build logic for platform '${project.platform}' is not implemented yet.`;
     }
-
-    const success = await AndroidExecutor.runGradle(
-      project.androidPath, 
-      ['assembleDebug'], 
-      captureOutput
-    );
-
-    if (!success) {
-      const errorReport = AndroidExecutor.parseBuildLog(fullLog);
-      return `Build Failed.\n${errorReport}`;
-    }
-
-    return 'Build Success';
   },
 
   /**
@@ -95,6 +113,7 @@ export const MCPTools = {
   async buildReleaseNode(projectId: string, onOutput?: (line: string) => void): Promise<string> {
     const project = await ProjectRepository.getById(projectId);
     if (!project) return 'Error: Project not found';
+    if (project.platform !== 'ANDROID_KOTLIN') return 'Error: Release build is only supported for ANDROID_KOTLIN projects.';
 
     const success = await AndroidExecutor.runGradle(
       project.androidPath, 
@@ -117,26 +136,31 @@ export const MCPTools = {
     const project = await ProjectRepository.getById(projectId);
     if (!project) return 'Error: Project not found';
 
-    const apkPath = await AndroidExecutor.findApk(project.androidPath);
-    if (!apkPath) return 'Error: APK not found. Please BUILD first.';
-
-    const installSuccess = await AndroidExecutor.runCommand(
-      ['install', '-r', apkPath], 
-      onOutput || ((l) => console.log(`[MCP DEPLOY] ${l}`))
-    );
-
-    if (!installSuccess) return 'Deployment Failed during APK installation.';
-
-    // パッケージ名の動的取得
-    const packageName = await AndroidExecutor.getPackageName(project.androidPath);
-    if (packageName) {
-      await AndroidExecutor.launchApp(packageName, onOutput);
+    if (project.platform === 'WINDOWS_TAURI') {
+      return 'Deployment for WINDOWS_TAURI is limited to local storage and browser preview at this stage.';
     }
 
-    // UI 監査 (物理的な検証)
-    const uiDump = await AndroidExecutor.dumpUiStructure();
-    
-    return `Deployment Success.\n--- Automated UI Audit (Physical View) ---\n${uiDump}\n--- End Audit ---`;
+    if (project.platform === 'ANDROID_KOTLIN') {
+      const apkPath = await AndroidExecutor.findApk(project.androidPath);
+      if (!apkPath) return 'Error: APK not found. Please BUILD first.';
+
+      const installSuccess = await AndroidExecutor.runCommand(
+        ['install', '-r', apkPath], 
+        onOutput || ((l) => console.log(`[MCP DEPLOY] ${l}`))
+      );
+
+      if (!installSuccess) return 'Deployment Failed during APK installation.';
+
+      const packageName = await AndroidExecutor.getPackageName(project.androidPath);
+      if (packageName) {
+        await AndroidExecutor.launchApp(packageName, onOutput);
+      }
+
+      const uiDump = await AndroidExecutor.dumpUiStructure();
+      return `Deployment Success.\n--- Automated UI Audit (Physical View) ---\n${uiDump}\n--- End Audit ---`;
+    }
+
+    return `Error: Deployment logic for platform '${project.platform}' is not implemented.`;
   },
 
   /**

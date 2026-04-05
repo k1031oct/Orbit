@@ -231,5 +231,38 @@ export const AndroidExecutor = {
     } catch (e) {
       return { alive: false, detail: String(e) };
     }
+  },
+
+  /**
+   * LogCat ログをストリーミング取得する
+   */
+  async streamLogcat(packageName: string, onOutput: OutputCallback): Promise<() => Promise<void>> {
+    try {
+      // 1. パッケージ名に対応する PID を取得
+      const pidCmd = Command.create('adb-cmd', ['shell', 'pidof', packageName]);
+      const pidOut = await pidCmd.execute();
+      const pid = pidOut.stdout.trim();
+
+      // 2. PID が取得できた場合は --pid でフィルタ、そうでない場合は全体を取得（後で JS フィルタ等）
+      const args = pid ? ['logcat', '-v', 'time', '--pid', pid] : ['logcat', '-v', 'time'];
+      const command = Command.create('adb-cmd', args);
+
+      command.stdout.on('data', line => {
+        // 出力内容にパッケージ名や PID が含まれるか確認（PID 指定なしの場合の保険）
+        if (!pid || line.includes(pid)) {
+          onOutput(line);
+        }
+      });
+
+      const child = await command.spawn();
+
+      // 停止用関数を返す
+      return async () => {
+        await child.kill();
+      };
+    } catch (e) {
+      onOutput(`[LOGCAT ERROR] ${e}`);
+      return async () => {};
+    }
   }
 };

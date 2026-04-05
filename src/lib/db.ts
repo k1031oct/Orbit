@@ -36,6 +36,7 @@ export async function getDb(): Promise<Database> {
     CREATE TABLE IF NOT EXISTS projects (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
+      platform TEXT DEFAULT 'WINDOWS_TAURI',
       gasUrl TEXT,
       androidPath TEXT NOT NULL,
       status TEXT DEFAULT 'pending',
@@ -50,6 +51,13 @@ export async function getDb(): Promise<Database> {
       gitUrl TEXT
     )
   `);
+
+  // Migration: Platform column for existing projects
+  try {
+    dbInstance.run("ALTER TABLE projects ADD COLUMN platform TEXT DEFAULT 'WINDOWS_TAURI'");
+  } catch (e) {
+    // Column already exists
+  }
 
   dbInstance.run(`
     CREATE TABLE IF NOT EXISTS decision_logs (

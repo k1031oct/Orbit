@@ -197,20 +197,36 @@ export default function Dashboard() {
               <form onSubmit={(e) => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
-                handleCreateProject(
-                   formData.get('name') as string,
-                   formData.get('gasUrl') as string,
-                   formData.get('gitUrl') as string
-                );
+                 handleCreateProject(
+                    formData.get('name') as string,
+                    formData.get('gasUrl') as string,
+                    formData.get('gitUrl') as string,
+                    formData.get('platform') as any
+                 );
               }} className="flex flex-col gap-10">
-                 <div className="flex flex-col gap-4">
-                    <label className="orbit-label ml-2">Node Identifier</label>
-                    <input 
-                      name="name"
-                      required
-                      placeholder="MISSION_NAME"
-                      className="orbit-input py-6 px-10 text-2xl font-black italic tracking-tight uppercase placeholder:text-white/5 focus:border-indigo-500/40 outline-none transition-all w-full"
-                    />
+                 <div className="grid grid-cols-2 gap-10">
+                    <div className="flex flex-col gap-4">
+                        <label className="orbit-label ml-2">Node Identifier</label>
+                        <input 
+                          name="name"
+                          required
+                          placeholder="MISSION_NAME"
+                          className="orbit-input py-6 px-10 text-2xl font-black italic tracking-tight uppercase placeholder:text-white/5 focus:border-indigo-500/40 outline-none transition-all w-full"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-4">
+                        <label className="orbit-label ml-2">Platform Stack</label>
+                        <select 
+                          name="platform"
+                          className="orbit-input py-6 px-10 text-xl font-black italic tracking-tight uppercase border-white/5 outline-none cursor-pointer text-indigo-400 bg-black/40"
+                        >
+                            <option value="WINDOWS_TAURI">WINDOWS_TAURI (Tauri + React)</option>
+                            <option value="ANDROID_KOTLIN">ANDROID_KOTLIN (Kotlin + Firebase)</option>
+                            <option value="WEB_NEXTJS">WEB_NEXTJS (Next.js + Tailwind)</option>
+                            <option value="GAS_TS">GAS_TS (TypeScript + clasp)</option>
+                            <option value="OTHER">OTHER (General)</option>
+                        </select>
+                    </div>
                  </div>
 
                  <div className="grid grid-cols-1 gap-10">

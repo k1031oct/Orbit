@@ -57,6 +57,7 @@ export const useHomeViewModel = () => {
           await ProjectRepository.add({ 
             name: p.name, 
             androidPath: p.path, 
+            platform: 'WINDOWS_TAURI', // Default for scanned nodes
             gitUrl: p.git_url || undefined,
             isRemoteSyncEnabled: p.git_url ? 1 : 0 
           });
@@ -78,7 +79,7 @@ export const useHomeViewModel = () => {
     }
   };
 
-  const handleCreateProject = async (name: string, gasUrl: string, gitUrl: string) => {
+  const handleCreateProject = async (name: string, gasUrl: string, gitUrl: string, platform: 'ANDROID_KOTLIN' | 'WINDOWS_TAURI' | 'WEB_NEXTJS' | 'GAS_TS' | 'OTHER') => {
     if (!state.workspaceRoot) {
       showToast('ワークスペースのルート設定が必要です', 'error');
       return;
@@ -102,6 +103,7 @@ export const useHomeViewModel = () => {
       // 3. Database Entry
       const newProject = await ProjectRepository.add({ 
         name, 
+        platform: platform || 'WINDOWS_TAURI', // Passed from UI
         gasUrl: gasUrl || undefined, 
         androidPath: projectPath, 
         isRemoteSyncEnabled: gasUrl ? 1 : 0,
