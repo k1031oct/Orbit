@@ -3,6 +3,8 @@ import { RequirementRepository } from '../repositories/RequirementRepository';
 import { LogRepository } from '../repositories/LogRepository';
 import { AndroidExecutor } from '../android';
 import { GovernanceInterceptor } from './governance';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * AI エージェント（MCP）に公開する具体的ツールの実体
@@ -53,6 +55,25 @@ export const MCPTools = {
       if (onOutput) onOutput(line);
       else console.log(`[MCP BUILD] ${line}`);
     };
+
+    const isTauri = fs.existsSync(path.join(project.androidPath, 'src-tauri'));
+
+    if (isTauri) {
+      // Windows/Tauri ビルドの実行
+      if (onOutput) onOutput('[ORBIT] Detecting Tauri project. Starting production build...');
+      const { exec } = await import('child_process');
+      const { promisify } = require('util');
+      const execAsync = promisify(exec);
+      
+      try {
+        const { stdout, stderr } = await execAsync('npm run build', { cwd: project.androidPath });
+        if (onOutput) onOutput(stdout);
+        if (stderr && onOutput) onOutput(`[WARN] ${stderr}`);
+        return 'Build Success (Tauri/Windows)';
+      } catch (e) {
+        return `Tauri Build Failed: ${e}`;
+      }
+    }
 
     const success = await AndroidExecutor.runGradle(
       project.androidPath, 

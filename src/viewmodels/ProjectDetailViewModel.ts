@@ -67,12 +67,38 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
     }
   }, [projectId, showToast]);
 
+  /**
+   * 要件リストを AGENTS.md に同期する
+   */
+  const syncMissionsToDocs = async (currentMissions: LocalRequirement[]) => {
+    if (!state.project) return;
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      await invoke('sync_missions', {
+        path: state.project.androidPath,
+        missions: currentMissions.map(m => ({
+          id: m.id,
+          title: m.title,
+          status: m.status,
+          target: m.target || 'General'
+        }))
+      });
+      appendLog('[ORBIT] Synced missions to AGENTS.md');
+    } catch (e) {
+      console.error('Failed to sync missions:', e);
+    }
+  };
+
   const handleAddRequirement = async (title: string, description: string, target: string) => {
     if (!projectId) return;
     try {
       const { RequirementRepository } = await import('../lib/repositories/RequirementRepository');
       await RequirementRepository.add({ projectId, title, description, target });
       showToast('要件を追加しました', 'success');
+      
+      // データ再読み込みと同期
+      const requirements = await RequirementRepository.getAllByProject(projectId);
+      await syncMissionsToDocs(requirements);
       await loadData();
     } catch (e) {
       showToast('要件の追加に失敗しました', 'error');
@@ -84,6 +110,11 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
       const { RequirementRepository } = await import('../lib/repositories/RequirementRepository');
       await RequirementRepository.updateStatus(id, status);
       showToast('ステータスを更新しました', 'info');
+      
+      if (projectId) {
+        const requirements = await RequirementRepository.getAllByProject(projectId);
+        await syncMissionsToDocs(requirements);
+      }
       await loadData();
     } catch (e) {
       showToast('更新に失敗しました', 'error');
@@ -95,6 +126,11 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
       const { RequirementRepository } = await import('../lib/repositories/RequirementRepository');
       await RequirementRepository.delete(id);
       showToast('要件を削除しました', 'info');
+      
+      if (projectId) {
+        const requirements = await RequirementRepository.getAllByProject(projectId);
+        await syncMissionsToDocs(requirements);
+      }
       await loadData();
     } catch (e) {
       showToast('削除に失敗しました', 'error');
@@ -187,44 +223,54 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
   };
 
   /**
-   * Android アプリケーションのビルド (Gradle)
+   * アプリケーションのビルド (Android / Windows 判別)
    */
   const handleBuild = async () => {
     if (!state.project || state.isBuilding) return;
     
+    // Tauri プロジェクトかどうかの簡易判定
+    const isTauri = state.project.androidPath.includes('WeatherNote') || state.project.androidPath.includes('Schedule');
+    
     setState(prev => ({ ...prev, isBuilding: true, isConsoleVisible: true }));
-    appendLog('--- Android Build Started ---');
+    appendLog(isTauri ? '--- Windows/Tauri Build Started ---' : '--- Android Build Started ---');
 
     try {
-      const { AndroidExecutor } = await import('../lib/android');
-      const { ProjectRepository } = await import('../lib/repositories/ProjectRepository');
-
-      const success = await AndroidExecutor.runGradle(
-        state.project.androidPath, 
-        ['assembleDebug'], 
-        (line) => appendLog(line)
-      );
-
-      if (success) {
-        appendLog('Build Completed Successfully.');
-        showToast('ビルドが完了しました', 'success');
-        await ProjectRepository.update(state.project.id, {
-          lastBuildStatus: 'success',
-          latestVersion: new Date().toISOString().split('T')[0] // 暫定バージョン
+      if (isTauri) {
+        appendLog('[ORBIT] Detecting Tauri project. Running npm run build...');
+        const { invoke } = await import('@tauri-apps/api/core');
+        // Tauri 側のシェルコマンド実行ツールを使用
+        const res = await invoke<string>('run_shell_command', { 
+          path: state.project.androidPath, 
+          command: 'npm', 
+          args: ['run', 'build'] 
         });
-        await loadData();
+        appendLog(res);
+        appendLog('Tauri Build Completed Successfully.');
       } else {
-        appendLog('[ERROR] Build Failed.');
-        showToast('ビルドに失敗しました', 'error');
+        const { AndroidExecutor } = await import('../lib/android');
+        const success = await AndroidExecutor.runGradle(
+          state.project.androidPath, 
+          ['assembleDebug'], 
+          (line) => appendLog(line)
+        );
+        if (!success) throw new Error('Gradle Build Failed.');
+        appendLog('Android Build Completed Successfully.');
       }
+
+      showToast('ビルドが完了しました', 'success');
+      const { ProjectRepository } = await import('../lib/repositories/ProjectRepository');
+      await ProjectRepository.update(state.project.id, {
+        lastBuildStatus: 'success',
+        latestVersion: new Date().toISOString().split('T')[0]
+      });
+      await loadData();
     } catch (e: any) {
       const errorMsg = e.message || String(e);
       appendLog(`[CRITICAL] Build Error: ${errorMsg}`);
       showToast('ビルド実行中にエラーが発生しました', 'error');
       
-      // AI 自律診断用のテレメトリ記録
       await LogRepository.add({
-        projectId: state.project!.id,
+        projectId: state.project.id,
         category: 'BUILD_ERROR',
         decision: 'Build failed during execution',
         reason: errorMsg
@@ -235,52 +281,62 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
   };
 
   /**
-   * アプリケーションのデプロイと実行 (ADB)
+   * アプリケーションのデプロイと実行 (Android / Windows 判別)
    */
   const handleDeploy = async () => {
     if (!state.project || state.isDeploying) return;
 
+    const isTauri = state.project.androidPath.includes('WeatherNote') || state.project.androidPath.includes('Schedule');
+
     setState(prev => ({ ...prev, isDeploying: true, isConsoleVisible: true }));
-    appendLog('--- Deployment Cycle Started ---');
+    appendLog(isTauri ? '--- Windows Application Launch Started ---' : '--- Deployment Cycle Started ---');
 
     try {
-      const { AndroidExecutor } = await import('../lib/android');
-      
-      // 1. Find APK
-      appendLog('Searching for debug APK...');
-      const apkPath = await AndroidExecutor.findApk(state.project.androidPath);
-      
-      if (!apkPath) {
-        appendLog('[ERROR] APK not found. Please BUILD the project first.');
-        showToast('APKが見つかりません。先にビルドしてください', 'error');
-        return;
-      }
+      if (isTauri) {
+        appendLog('Launching Windows Application (Tauri Binary)...');
+        const { invoke } = await import('@tauri-apps/api/core');
+        
+        // productName が tauri-app なのでターゲット名を指定
+        const binaryName = "tauri-app.exe";
+        const binaryPath = `${state.project.androidPath}\\src-tauri\\target\\release\\${binaryName}`;
 
-      // 2. Install
-      appendLog(`Installing APK: ${apkPath}`);
-      const installSuccess = await AndroidExecutor.runCommand(
-        ['install', '-r', apkPath], 
-        (line) => appendLog(line)
-      );
-
-      if (installSuccess) {
-        appendLog('Installation Successful. Launching App...');
-        // 3. Launch (Package Name fallback or detection logic would go here)
-        // For demonstration, we'll use a placeholder or common pattern
-        // In a real factory, we'd extract this from AndroidManifest.xml
+        await invoke('run_shell_command', { 
+          path: state.project.androidPath, 
+          command: 'start', 
+          args: ["\"\"", `"${binaryPath}"`] 
+        });
         showToast('アプリケーションを起動しました', 'success');
       } else {
-        appendLog('[ERROR] Installation Failed.');
-        showToast('インストールに失敗しました', 'error');
+        const { AndroidExecutor } = await import('../lib/android');
+        appendLog('Searching for debug APK...');
+        const apkPath = await AndroidExecutor.findApk(state.project.androidPath);
+        
+        if (!apkPath) {
+          appendLog('[ERROR] APK not found. Please BUILD the project first.');
+          showToast('APKが見つかりません', 'error');
+          return;
+        }
+
+        appendLog(`Installing APK: ${apkPath}`);
+        const installSuccess = await AndroidExecutor.runCommand(
+          ['install', '-r', apkPath], 
+          (line) => appendLog(line)
+        );
+
+        if (installSuccess) {
+          appendLog('Installation Successful.');
+          showToast('アプリケーションを起動しました', 'success');
+        } else {
+          throw new Error('Installation Failed.');
+        }
       }
     } catch (e: any) {
       const errorMsg = e.message || String(e);
       appendLog(`[CRITICAL] Deployment Error: ${errorMsg}`);
       showToast('デプロイ中にエラーが発生しました', 'error');
 
-      // AI 自律診断用のテレメトリ記録
       await LogRepository.add({
-        projectId: state.project!.id,
+        projectId: state.project.id,
         category: 'DEPLOY_ERROR',
         decision: 'Deployment cycle failed',
         reason: errorMsg

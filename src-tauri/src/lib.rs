@@ -74,22 +74,28 @@ async fn scaffold_project(path: String, name: String, project_id: String, mcp_ur
     // Scaffold AGENTS.md if missing
     let agents_path = project_path.join("AGENTS.md");
     if !agents_path.exists() {
-        let content = format!("# AGENTS for {}\n\n## 境界定義\n- このプロジェクトは Orbit によって管理されています。\n\n## 行動原則\n- DATA_FLOW.md を正解とする。\n", name);
+        let content = format!(
+            "<!-- ORBIT_ID: {} -->\n<!-- ORBIT_NAME: {} -->\n<!-- ORBIT_PATH: {} -->\n\n# AGENTS for {}\n\n## 境界定義\n- このプロジェクトは Orbit によって管理されています。\n\n## 行動原則\n- DATA_FLOW.md を正解とする。\n\n## 🎯 ACTIVE MISSIONS\n", 
+            project_id, name, path, name
+        );
         fs::write(agents_path, content).map_err(|e| e.to_string())?;
     }
 
     // Scaffold DATA_FLOW.md if missing
     let data_flow_path = project_path.join("DATA_FLOW.md");
     if !data_flow_path.exists() {
-        let content = format!("# DATA_FLOW for {}\n\n## システム構造\n└─ プロジェクトルート\n", name);
+        let content = format!(
+            "<!-- ORBIT_ID: {} -->\n<!-- ORBIT_NAME: {} -->\n<!-- ORBIT_PATH: {} -->\n\n# DATA_FLOW for {}\n\n## システム構造\n└─ プロジェクトルート\n", 
+            project_id, name, path, name
+        );
         fs::write(data_flow_path, content).map_err(|e| e.to_string())?;
     }
 
     // 1. Scaffold ORBIT.md (Portal Link)
     let orbit_md_path = project_path.join("ORBIT.md");
     let orbit_content = format!(
-        "# ORBIT MISSION NODE: {}\n\n## Orchestrator Link\n- **Project ID**: {}\n- **MCP Endpoint**: {}\n\n## Governance\n- This node is managed by the Orbit Command Center.\n- Do not remove this file; it is required for AI-Orchestrator synchronization.\n",
-        name, project_id, mcp_url
+        "<!-- ORBIT_ID: {} -->\n<!-- ORBIT_NAME: {} -->\n<!-- ORBIT_PATH: {} -->\n\n# ORBIT MISSION NODE: {}\n\n## Orchestrator Link\n- **Project ID**: {}\n- **MCP Endpoint**: {}\n\n## Governance\n- This node is managed by the Orbit Command Center.\n- Do not remove this file; it is required for AI-Orchestrator synchronization.\n",
+        project_id, name, path, name, project_id, mcp_url
     );
     fs::write(orbit_md_path, orbit_content).map_err(|e| e.to_string())?;
 
@@ -112,6 +118,82 @@ async fn scaffold_project(path: String, name: String, project_id: String, mcp_ur
     Ok(())
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct Mission {
+    id: i32,
+    title: String,
+    status: String,
+    target: String,
+}
+
+#[tauri::command]
+async fn sync_missions(path: String, missions: Vec<Mission>) -> Result<(), String> {
+    let agents_path = std::path::Path::new(&path).join("AGENTS.md");
+    if !agents_path.exists() { return Ok(()); }
+
+    let content = fs::read_to_string(&agents_path).map_err(|e| e.to_string())?;
+    
+    // ## 🎯 ACTIVE MISSIONS セクションを探す
+    let section_header = "## 🎯 ACTIVE MISSIONS";
+    let mut mission_list = String::from("\n## 🎯 ACTIVE MISSIONS\n");
+    for m in missions {
+        let check = if m.status == "Done" { "x" } else { " " };
+        mission_list.push_str(&format!("- [{}] <!-- REQ_ID: {} --> {} ({})\n", check, m.id, m.title, m.target));
+    }
+
+    let new_content = if let Some(pos) = content.find(section_header) {
+        // 既存のセクションを置換 (次の ## またはファイルの末尾まで)
+        let mut final_content = content[..pos].to_string();
+        final_content.push_str(&mission_list);
+        
+        let remaining = &content[pos + section_header.len()..];
+        if let Some(next_section) = remaining.find("\n## ") {
+            final_content.push_str(&remaining[next_section..]);
+        }
+        final_content
+    } else {
+        // セクションがない場合は末尾に追加
+        let mut final_content = content.trim_end().to_string();
+        final_content.push_str("\n");
+        final_content.push_str(&mission_list);
+        final_content
+    };
+
+    fs::write(agents_path, new_content).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn run_shell_command(path: String, command: String, args: Vec<String>) -> Result<String, String> {
+    use std::process::Command;
+    
+    let is_windows = cfg!(windows);
+    let mut cmd_base = if is_windows {
+        let mut c = Command::new("cmd");
+        c.arg("/C");
+        c
+    } else {
+        let mut c = Command::new("sh");
+        c.arg("-c");
+        c
+    };
+
+    let full_command = format!("{} {}", command, args.join(" "));
+    let output = cmd_base.arg(full_command)
+        .current_dir(path)
+        .output()
+        .map_err(|e| e.to_string())?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    
+    if output.status.success() {
+        Ok(stdout)
+    } else {
+        Err(format!("{}\n{}", stdout, stderr))
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -126,7 +208,9 @@ pub fn run() {
             open_vscode, 
             open_android_studio,
             scan_projects,
-            scaffold_project
+            scaffold_project,
+            run_shell_command,
+            sync_missions
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
