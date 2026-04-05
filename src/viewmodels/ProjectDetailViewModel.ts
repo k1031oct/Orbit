@@ -229,7 +229,8 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
     if (!state.project || state.isBuilding) return;
     
     // Tauri プロジェクトかどうかの簡易判定
-    const isTauri = state.project.androidPath.includes('WeatherNote') || state.project.androidPath.includes('Schedule');
+    const tauriProjects = ['WeatherNote', 'Schedule', 'Memo', 'All In One'];
+    const isTauri = tauriProjects.some(name => state.project!.androidPath.includes(name) || state.project!.androidPath.includes('手帳'));
     
     setState(prev => ({ ...prev, isBuilding: true, isConsoleVisible: true }));
     appendLog(isTauri ? '--- Windows/Tauri Build Started ---' : '--- Android Build Started ---');
@@ -242,7 +243,7 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
         const res = await invoke<string>('run_shell_command', { 
           path: state.project.androidPath, 
           command: 'npm', 
-          args: ['run', 'build'] 
+          args: ['run', 'tauri', 'build'] 
         });
         appendLog(res);
         appendLog('Tauri Build Completed Successfully.');
@@ -286,7 +287,8 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
   const handleDeploy = async () => {
     if (!state.project || state.isDeploying) return;
 
-    const isTauri = state.project.androidPath.includes('WeatherNote') || state.project.androidPath.includes('Schedule');
+    const tauriProjects = ['WeatherNote', 'Schedule', 'Memo', 'All In One'];
+    const isTauri = tauriProjects.some(name => state.project!.androidPath.includes(name) || state.project!.androidPath.includes('手帳'));
 
     setState(prev => ({ ...prev, isDeploying: true, isConsoleVisible: true }));
     appendLog(isTauri ? '--- Windows Application Launch Started ---' : '--- Deployment Cycle Started ---');
