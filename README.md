@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Orbit: Autonomous Development Orchestrator
 
-## Getting Started
+![Orbit Branding Header](public/branding_header.png)
 
-First, run the development server:
+## 🌌 概要 (Overview)
 
+**Orbit** は、自律型AIエージェント（AntiGravity）のための**統合管制室（Command Center）**です。
+高度なオーケストレーション機能、厳格なデータ・ガバナンス、そしてリアルタイムのテレメトリ監視を組み合わせ、複雑なソフトウェア開発プロセスをAIが自律的に遂行・管理するためのハブとして機能します。
+
+単純なダッシュボードではなく、開発現場の「現実」とAIの「推論」を高度に同期させる**ポータル・エンジン**を目指しています。
+
+---
+
+## 🚀 主要機能 (Key Features)
+
+### 1. 📂 Local-First Command Center
+- すべてのプロジェクトデータと要件定義は、ローカルの SQLite (`orbit.db`) を **Source of Truth** として管理されます。
+- 高速なアクセスと、ネットワーク環境に左右されない安定した開発体験を提供します。
+
+### 2. 🤖 MCP (Model Context Protocol) Integration
+- 内蔵の MCP エンドポイントにより、AIエージェントは Orbit を通じて物理ファイル、データベース、さらにはシェルコマンドに安全にアクセスできます。
+
+### 3. ⚖️ 開発ガバナンスの物理強制 (Governance Enforcement)
+- `write_governed_file` などのツールを通じて、プロジェクト固有の規約（例：特定のファイル形式の禁止、構造の維持）をエンジニアリングレベルで強制します。
+
+### 4. 🛠️ 自律修復ループ (Self-Healing Loop)
+- 実行時のエラーやビルドの失敗を `decision_logs` に詳細に記録。
+- エージェントはテレメトリを相関分析し、根本原因の特定から修正・再ビルドまでを自律的にループさせることが可能です。
+
+---
+
+## 🏗️ 技術スタック (Technology Stack)
+
+| Layer | Technology |
+| :--- | :--- |
+| **Framework** | [Tauri v2](https://v2.tauri.app/) (Next.js 15 Integration) |
+| **Frontend** | React 19 / TypeScript / Lucide-React |
+| **Backend (Native)** | Rust (Tauri Commands) |
+| **Database** | SQLite ([sql.js](https://sql.js.org/)) |
+| **AI Interface** | Model Context Protocol (MCP) |
+
+### アーキテクチャ
+- **View-ViewModel-Repository パターン**を厳守し、UI、ロジック、データアクセスを完全に分離。
+- Rust によるネイティブレイヤーを活用し、OSレベルのセキュアな操作を実現。
+
+---
+
+## 🛠️ セットアップ (Getting Started)
+
+### 前提条件
+- Node.js (v20以上)
+- Rust (最新の stable)
+- Windows OS (Tauri v2 サポート環境)
+
+### インストール & 起動
 ```bash
+# 依存関係のインストール
+npm install
+
+# 開発モード (Next.js + Tauri) で起動
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Tauri コマンドの単体実行
+npm run tauri dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📜 開発憲法 (Governance)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Orbit プロジェクトにおける変更は、常に `DATA_FLOW.md` の定義に基づかなければなりません。
+実装がドキュメントと矛盾する場合、まずドキュメントを更新し、承認を得る必要があります。
 
-## Learn More
+- **Telemetry Duty**: 重大な例外処理では必ず `LogRepository` に記録すること。
+- **Clean Binding**: 直接的な DOM 操作を避け、ViewModel 経由で状態を管理すること。
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🛰️ リンク
+- [開発ワークフロー (ORBIT_DEV_WORKFLOW.md)](ORBIT_DEV_WORKFLOW.md)
+- [データフロー定義 (DATA_FLOW.md)](DATA_FLOW.md)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+*Developed by **AntiGravity** - Empowering Autonomous Development.*
