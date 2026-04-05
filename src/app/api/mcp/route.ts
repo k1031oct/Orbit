@@ -37,7 +37,16 @@ export async function POST(req: Request) {
               },
               {
                 name: 'build_node',
-                description: 'Triggers a Gradle build for the specified node.',
+                description: 'Triggers a Debug Gradle build for the specified node.',
+                inputSchema: {
+                  type: 'object',
+                  properties: { projectId: { type: 'string' } },
+                  required: ['projectId']
+                }
+              },
+              {
+                name: 'build_release_node',
+                description: 'Triggers a Release (AAB) Gradle build for the specified node.',
                 inputSchema: {
                   type: 'object',
                   properties: { projectId: { type: 'string' } },
@@ -55,14 +64,16 @@ export async function POST(req: Request) {
               },
               {
                 name: 'write_governed_file',
-                description: 'Writes a file to the project, strictly enforcing architecture rules.',
+                description: 'Writes a file to the project, strictly enforcing architecture rules and logging reasoning.',
                 inputSchema: {
                   type: 'object',
                   properties: { 
+                    projectId: { type: 'string', description: 'The project ID to associate this write with.' },
                     path: { type: 'string' },
-                    content: { type: 'string' }
+                    content: { type: 'string' },
+                    reasoning: { type: 'string', description: 'Briefly explain WHY this file is being written or modified.' }
                   },
-                  required: ['path', 'content']
+                  required: ['projectId', 'path', 'content']
                 }
               },
               {
@@ -82,6 +93,40 @@ export async function POST(req: Request) {
                   type: 'object',
                   properties: { 
                     projectId: { type: 'string' }
+                  },
+                  required: ['projectId']
+                }
+              },
+              {
+                name: 'verify_mission',
+                description: 'Runs an end-to-end verification (Build -> Deploy -> UI Audit -> Screenshot).',
+                inputSchema: {
+                  type: 'object',
+                  properties: { 
+                    projectId: { type: 'string' }
+                  },
+                  required: ['projectId']
+                }
+              },
+              {
+                name: 'autonomous_repair',
+                description: 'Attempts to autonomously repair build errors by analyzing logs and retrying.',
+                inputSchema: {
+                  type: 'object',
+                  properties: { 
+                    projectId: { type: 'string' }
+                  },
+                  required: ['projectId']
+                }
+              },
+              {
+                name: 'report_mission_complete',
+                description: 'Reports the final completion of a project to GAS and internal DB.',
+                inputSchema: {
+                  type: 'object',
+                  properties: { 
+                    projectId: { type: 'string' },
+                    message: { type: 'string', description: 'Final summary of the work done.' }
                   },
                   required: ['projectId']
                 }
@@ -112,12 +157,20 @@ export async function POST(req: Request) {
             resultText = await MCPTools.syncRequirements(args.projectId);
             break;
           
+          case 'verify_mission':
+            resultText = await MCPTools.verifyMission(args.projectId);
+            break;
+          
+          case 'report_mission_complete':
+            resultText = await MCPTools.reportMissionComplete(args.projectId, args.message);
+            break;
+          
           case 'get_mission_telemetry':
             resultText = await MCPTools.getMissionTelemetry(args.projectId);
             break;
           
           case 'write_governed_file':
-            const govRes = await GovernanceInterceptor.writeGovernedFile(args.path, args.content);
+            const govRes = await MCPTools.writeGovernedFile(args.projectId, args.path, args.content, args.reasoning);
             return NextResponse.json({
               id,
               result: {

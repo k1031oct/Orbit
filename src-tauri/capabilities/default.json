@@ -30,11 +30,13 @@
     {
       "identifier": "shell:allow-execute",
       "allow": [
+        { "name": "git-cmd", "cmd": "git", "args": [ { "validator": ".*" } ] },
+        { "name": "adb-cmd", "cmd": "adb", "args": [ { "validator": ".*" } ] },
         { "name": "git-clone", "args": [ "clone", { "validator": ".*" }, { "validator": ".*" } ], "cmd": "git" },
         { "name": "git-pull", "args": [ "pull" ], "cmd": "git" },
         { "name": "git-status", "args": [ "status" ], "cmd": "git" },
         { "name": "git-version", "args": [ "version" ], "cmd": "git" },
-        { "name": "adb-cmd", "cmd": "adb", "args": [ { "validator": ".*" } ] },
+        { "name": "adb-cmd-specific", "cmd": "adb", "args": [ { "validator": ".*" } ] },
         { "name": "win-cmd", "cmd": "cmd", "args": [ { "validator": ".*" } ] },
         { "name": "java-cmd", "cmd": "java", "args": [ { "validator": ".*" } ] }
       ]

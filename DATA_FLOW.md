@@ -6,17 +6,30 @@ Orbit のシステムにおいては、本番環境のローカル SQLite デー
 └─ **Orbit Command Center (Local Hub)**
     ├─ `C:\Users\{User}\AppData\Roaming\com.k1031oct.orbit\orbit.db`  **(Source of Truth)**
     │   ├─ `projects` (管理下の開発ノード一覧)
-    │   └─ `local_requirements` (タスク/要件定義のローカル管理キャッシュ)
+    │   ├─ `local_requirements` (タスク/要件定義: 別名 Objectives)
+    │   └─ `decision_logs` (エージェントの判断理由とテレメトリ)
     │
     ├─ **Remote Sync Node** (Optional)
     │   └─ Google Apps Script (GAS) Endpoint
-    │      └─ `sync_requirements` により要件を `orbit.db` へプル
+    │      └─ `syncCompletionStatus` により要件を GAS へ報告
     │
-    └─ **Orchestrator Backend (Tauri / Rust)**
+    └─ **Orchestrator Backend (Tauri / Next.js)**
         └─ **MCP Endpoint (`/api/mcp/route.ts`)**
-            └─ 各エージェントはこのエンドポイントを経由して Orbit 上の世界（DBや各種ツール）とやり取りする。
+            └─ 各エージェントはこのエンドポイントを経由して操作を行う。
+               ├─ `write_governed_file`: 規約（命名、XML禁止）を物理的に強制。
+               ├─ `build_node`: Gradle ビルドログをパースして構造化エラーを返却。
+               └─ `deploy_node`: UI XML をダンプし、初期画面の物理監査を行う。
 
-## ノード（エージェント）の行動境界と権限
-- エージェントは **MCP ツール (e.g., `write_governed_file`, `build_node`, `deploy_node`) を通じてのみ** ノードへの物理的な操作を行うこと。
-- `write_governed_file` は、XMLの禁止等の「規約（Governance）」を物理的に強制する。
-- 実行エラーのテレメトリは `orbit.db` の `decision_logs` に記録され、エージェントは `get_mission_telemetry` で自律的な修復判断に利用する。
+## フェーズ別データフロー
+
+### Phase 1: Android 制御 (Physical Control)
+- **Goal**: ビルドログの詳細解析と UI 構造のダンプ。
+- **Flow**: `AndroidExecutor` -> `adb shell uiautomator dump` -> XML String (Minified) -> Agent.
+
+### Phase 2: ガバナンス・フック (Physical Constraints)
+- **Goal**: エージェントが規約を「忘れる」ことを許さない物理的なガードレール。
+- **Flow**: `write_governed_file` -> `GovernanceManager.validateContent` -> Block if invalid.
+
+### Phase 3: 自律検収と GAS 同期 (Persistence & Multi-Agent)
+- **Goal**: 完成度の自律的な検証と、コスト抑制のための GAS 連携。
+- **Flow**: `LogRepository` -> `decision_logs` (Reasoning stored) -> `sync_requirements` (GAS Sync).
