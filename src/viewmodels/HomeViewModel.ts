@@ -89,10 +89,11 @@ export const useHomeViewModel = () => {
       const { invoke } = await import('@tauri-apps/api/core');
       const projectPath = await join(state.workspaceRoot, name);
 
-      // 1. Git Clone FIRST if URL provided (Ensures directory is either empty or created by git)
-      if (gitUrl) {
-        showToast(`リポジトリを同期中: ${gitUrl}`, 'info');
-        const res = await GitRepository.clone(gitUrl, projectPath);
+      // 1. Git Clone ONLY if valid URL provided (Ensures directory is either empty or created by git)
+      const trimmedGitUrl = gitUrl ? gitUrl.trim() : '';
+      if (trimmedGitUrl) {
+        showToast(`リポジトリを同期中: ${trimmedGitUrl}`, 'info');
+        const res = await GitRepository.clone(trimmedGitUrl, projectPath);
         if (!res.success) {
           throw new Error(`Git クローンに失敗しました: ${res.error || 'Unknown error'}`);
         }

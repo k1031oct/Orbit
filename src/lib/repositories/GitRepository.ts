@@ -8,6 +8,9 @@ export const GitRepository = {
    * リモートリポジトリをローカルにクローンする
    */
   async clone(url: string, targetPath: string): Promise<{ success: boolean, error?: string }> {
+    if (!url || url.trim() === '') {
+      return { success: false, error: 'Repository URL is required for cloning.' };
+    }
     try {
       const command = Command.create('git-cmd', ['clone', url, targetPath]);
       const output = await command.execute();
