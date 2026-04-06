@@ -317,15 +317,78 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
         appendLog('Launching Windows Application (Tauri Binary)...');
         const { invoke } = await import('@tauri-apps/api/core');
         
-        const binaryName = "tauri-app.exe";
-        const binaryPath = `${project.androidPath}\\src-tauri\\target\\release\\${binaryName}`;
+        try {
+          // 1. バイナリ名の決定 (Cargo.toml > tauri.conf.json > Fallback)
+          let binaryName = "app.exe"; 
+          
+          try {
+            // Cargo.toml から package.name を取得 (これが実際のバイナリ名になることが多い)
+            const cargoToml = await invoke<string>('run_shell_command', {
+              path: project.androidPath,
+              command: 'cmd',
+              args: ['/c', 'type', 'src-tauri\\Cargo.toml']
+            });
+            const nameMatch = cargoToml.match(/\[package\][^]*?name\s*=\s*"([^"]+)"/);
+            if (nameMatch && nameMatch[1]) {
+              binaryName = `${nameMatch[1]}.exe`;
+            } else {
+              // tauri.conf.json から取得
+              const configJson = await invoke<string>('run_shell_command', {
+                path: project.androidPath,
+                command: 'cmd',
+                args: ['/c', 'type', 'src-tauri\\tauri.conf.json']
+              });
+              const config = JSON.parse(configJson);
+              if (config.productName) {
+                binaryName = `${config.productName}.exe`;
+              }
+            }
+          } catch (e) {
+            appendLog(`[WARN] Metadata read failed, using default: ${binaryName}`);
+          }
 
-        await invoke('run_shell_command', { 
-          path: project.androidPath, 
-          command: 'explorer', 
-          args: [`"${binaryPath}"`] 
-        });
-        showToast('アプリケーションを起動しました', 'success');
+          // 2. 複数のパス（release / debug）を試行
+          const pathsToTry = [
+            `${project.androidPath}\\src-tauri\\target\\release\\${binaryName}`,
+            `${project.androidPath}\\src-tauri\\target\\debug\\${binaryName}`,
+            `${project.androidPath}\\src-tauri\\target\\release\\app.exe`,
+            `${project.androidPath}\\src-tauri\\target\\debug\\app.exe`,
+          ];
+
+          let foundPath = "";
+          for (const p of pathsToTry) {
+            try {
+              // dir コマンドで存在確認
+              const res = await invoke<string>('run_shell_command', {
+                path: project.androidPath,
+                command: 'cmd',
+                args: ['/c', 'dir', p]
+              });
+              // 出力にファイル名が含まれていれば存在とみなす
+              if (res.includes('.exe')) {
+                foundPath = p;
+                break;
+              }
+            } catch (e) {
+              continue;
+            }
+          }
+
+          if (!foundPath) {
+            throw new Error(`Executable not found. Tried paths: ${pathsToTry.join(', ')}`);
+          }
+
+          appendLog(`Found binary at: ${foundPath}`);
+          
+          await invoke('run_shell_command', { 
+            path: project.androidPath, 
+            command: foundPath, // クォートをJS側で付与しない (Rust側で結合されるため)
+            args: [] 
+          });
+          showToast('アプリケーションを起動しました', 'success');
+        } catch (e: any) {
+          throw new Error(`Tauri Launch Failed: ${e.message || e}`);
+        }
       } else if (isAndroid) {
         const { AndroidExecutor } = await import('../lib/android');
         appendLog('Searching for debug APK...');

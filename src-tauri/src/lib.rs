@@ -168,21 +168,26 @@ async fn run_shell_command(path: String, command: String, args: Vec<String>) -> 
     use std::process::Command;
     
     let is_windows = cfg!(windows);
-    let mut cmd_base = if is_windows {
-        let mut c = Command::new("cmd");
-        c.arg("/C");
-        c
+    let output = if is_windows {
+        let mut cmd = Command::new("cmd");
+        cmd.arg("/C");
+        // コマンドと引数を結合して cmd /C に渡す
+        let mut full_cmd = command.clone();
+        for arg in args {
+            full_cmd.push(' ');
+            full_cmd.push_str(&arg);
+        }
+        cmd.arg(full_cmd)
+           .current_dir(path)
+           .output()
+           .map_err(|e| e.to_string())?
     } else {
-        let mut c = Command::new("sh");
-        c.arg("-c");
-        c
+        Command::new(command)
+           .args(args)
+           .current_dir(path)
+           .output()
+           .map_err(|e| e.to_string())?
     };
-
-    let full_command = format!("{} {}", command, args.join(" "));
-    let output = cmd_base.arg(full_command)
-        .current_dir(path)
-        .output()
-        .map_err(|e| e.to_string())?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();

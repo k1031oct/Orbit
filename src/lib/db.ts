@@ -71,6 +71,20 @@ export async function getDb(): Promise<Database> {
   `);
 
   dbInstance.run(`
+    CREATE TABLE IF NOT EXISTS knowledge_base (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      projectId TEXT NOT NULL,
+      techStack TEXT,
+      taskTitle TEXT NOT NULL,
+      codeSnippet TEXT,
+      outcome TEXT NOT NULL,
+      reasoning TEXT,
+      confidence REAL DEFAULT 1.0,
+      timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  dbInstance.run(`
     CREATE TABLE IF NOT EXISTS local_requirements (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       projectId TEXT NOT NULL,

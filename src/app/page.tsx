@@ -30,6 +30,7 @@ export default function Dashboard() {
 
   const { toasts } = useToast();
   const lastLogRef = useRef<HTMLDivElement>(null);
+  const consoleEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadHome();
@@ -44,6 +45,12 @@ export default function Dashboard() {
       lastLogRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [detailState.consoleLogs, toasts]);
+
+  useEffect(() => {
+    if (detailState.isConsoleVisible && consoleEndRef.current) {
+      consoleEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [detailState.consoleLogs, detailState.isConsoleVisible]);
 
   return (
     <div className="orbit-dashboard animate-fade">
@@ -139,6 +146,7 @@ export default function Dashboard() {
               onRemoveRequirement={handleRemoveRequirement}
               onChangeRequirementStatus={handleChangeRequirementStatus}
               onToggleConsole={toggleConsole}
+              consoleEndRef={consoleEndRef}
             />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center gap-6 opacity-20">
@@ -276,7 +284,8 @@ function ProjectDetailView({
   onAddRequirement,
   onRemoveRequirement,
   onChangeRequirementStatus,
-  onToggleConsole 
+  onToggleConsole,
+  consoleEndRef
 }: any) {
   const [newReq, setNewReq] = useState({ title: '', target: 'Core' });
   const project = state.project;
@@ -562,6 +571,7 @@ function ProjectDetailView({
               {state.consoleLogs.length === 0 && (
                  <div className="h-full flex items-center justify-center text-white/5 italic">No telemetry data received...</div>
               )}
+              <div ref={consoleEndRef} />
            </div>
         </div>
       )}

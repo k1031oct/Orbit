@@ -7,7 +7,18 @@
 **Orbit** は、自律型AIエージェント（AntiGravity）のための**統合管制室（Command Center）**です。
 高度なオーケストレーション機能、厳格なデータ・ガバナンス、そしてリアルタイムのテレメトリ監視を組み合わせ、複雑なソフトウェア開発プロセスをAIが自律的に遂行・管理するためのハブとして機能します。
 
-単純なダッシュボードではなく、開発現場の「現実」とAIの「推論」を高度に同期させる**ポータル・エンジン**を目指しています。
+> [!IMPORTANT]
+> **本プロジェクトは、「AIエージェントの開発支援としてのソフトウェア開発テスト」の一環として開発・公開されています。**
+> Orbit は、AI エージェントが実際の開発環境（ファイルシステム、ビルドツール、デバッグログ等）と対話し、自律的にプロダクトを完成させるプロセスを「オーケストレート（指揮）」するための基盤ソフトウェアです。
+
+### 🚀 開発テスト・ショーケース (Showcase)
+Orbit（および AntiGravity エージェント）によって自律的に開発されたプロダクトの例です。
+- [Puzzle Collection](https://github.com/k1031oct/Puzzle.git) (15 Puzzle, 2048, Minesweeper, Sudoku)
+- [Memo App](https://github.com/k1031oct/Memo.git)
+- [Schedule App](https://github.com/k1031oct/Schedule.git)
+- [WeatherNote](https://github.com/k1031oct/WeatherNote.git)
+- [All-In-One Notebook](https://github.com/k1031oct/All-In-One-Notebook.git)
+- [Notebook for Android](https://github.com/k1031oct/Notebook-for-Android.git)
 
 ---
 

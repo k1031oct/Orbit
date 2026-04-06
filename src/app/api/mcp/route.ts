@@ -120,6 +120,18 @@ export async function POST(req: Request) {
                 }
               },
               {
+                name: 'read_knowledge',
+                description: 'Queries the knowledge base for past experiences, code snippets, and architectural decisions.',
+                inputSchema: {
+                  type: 'object',
+                  properties: { 
+                    query: { type: 'string', description: 'Search term (task, error, or feature name)' },
+                    techStackFilter: { type: 'string', description: 'Optional: Filter by stack (e.g., Next.js, Tauri)' }
+                  },
+                  required: ['query']
+                }
+              },
+              {
                 name: 'report_mission_complete',
                 description: 'Reports the final completion of a project to GAS and internal DB.',
                 inputSchema: {
@@ -163,6 +175,10 @@ export async function POST(req: Request) {
           
           case 'report_mission_complete':
             resultText = await MCPTools.reportMissionComplete(args.projectId, args.message);
+            break;
+          
+          case 'read_knowledge':
+            resultText = await MCPTools.readKnowledge(args.query, args.techStackFilter);
             break;
           
           case 'get_mission_telemetry':

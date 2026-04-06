@@ -21,7 +21,11 @@ export const ConsoleViewer: React.FC<ConsoleViewerProps> = ({
   // オートスクロール
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      const scrollElement = scrollRef.current;
+      // レンダリング完了後に実行されるようマイクロタスクまたはタイマーを使用
+      setTimeout(() => {
+        scrollElement.scrollTop = scrollElement.scrollHeight;
+      }, 0);
     }
   }, [logs, isVisible]);
 

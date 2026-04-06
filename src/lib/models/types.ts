@@ -39,3 +39,15 @@ export interface LocalRequirement {
   target?: string;
   createdAt: string;
 }
+
+export interface KnowledgeEntry {
+  id?: number;
+  projectId: string;
+  techStack: string; // JSON string
+  taskTitle: string;
+  codeSnippet: string;
+  outcome: 'SUCCESS' | 'FAILURE';
+  reasoning: string;
+  confidence: number;
+  timestamp: string;
+}

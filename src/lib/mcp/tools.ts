@@ -10,16 +10,29 @@ import path from 'path';
  * ファイル構成からプラットフォームを推測する
  */
 export async function detectPlatform(projectPath: string): Promise<string> {
-  if (fs.existsSync(path.join(projectPath, 'build.gradle.kts')) || fs.existsSync(path.join(projectPath, 'build.gradle'))) {
+  const hasFile = (p: string) => fs.existsSync(path.join(projectPath, p));
+  
+  if (hasFile('build.gradle.kts') || hasFile('build.gradle')) {
     return 'ANDROID_KOTLIN';
   }
-  if (fs.existsSync(path.join(projectPath, 'src-tauri'))) {
+  
+  if (hasFile('src-tauri')) {
     return 'WINDOWS_TAURI';
   }
-  if (fs.existsSync(path.join(projectPath, 'package.json'))) {
+  
+  if (hasFile('package.json')) {
     const pkg = JSON.parse(fs.readFileSync(path.join(projectPath, 'package.json'), 'utf-8'));
-    if (pkg.dependencies?.next) return 'WEB_NEXTJS';
+    const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+    
+    if (deps.next) return 'WEB_NEXTJS';
+    if (deps['@tauri-apps/api']) return 'WINDOWS_TAURI';
+    if (deps.react) return 'WEB_REACT';
   }
+  
+  if (hasFile('app.json') && hasFile('package.json')) {
+     return 'MOBILE_EXPO';
+  }
+
   return 'OTHER';
 }
 
@@ -41,7 +54,47 @@ export const MCPTools = {
       reason: reasoning || (res.success ? 'Standard development' : 'Governance Blocked')
     });
 
+    // 成功時、かつ重要なファイル（ViewModel, Repository等）の場合はナレッジベースに仮登録
+    if (res.success && reasoning && (path.includes('ViewModel') || path.includes('Repository'))) {
+      const { KnowledgeRepository } = await import('../repositories/KnowledgeRepository');
+      const techStack = await KnowledgeRepository.inferTechStack(path.split('src')[0]);
+      
+      await KnowledgeRepository.add({
+        projectId,
+        techStack: JSON.stringify(techStack),
+        taskTitle: `Implementation of ${path.split(/[\\/]/).pop()}`,
+        codeSnippet: content.length > 1000 ? content.substring(0, 1000) + '...' : content,
+        outcome: 'SUCCESS',
+        reasoning: reasoning,
+        confidence: 0.8 // 自動登録はやや低めのスコアから開始
+      });
+    }
+
     return res;
+  },
+
+  /**
+   * ナレッジベースから知見を検索する
+   */
+  async readKnowledge(query: string, techStackFilter?: string): Promise<string> {
+    const { KnowledgeRepository } = await import('../repositories/KnowledgeRepository');
+    const results = await KnowledgeRepository.search(query, techStackFilter);
+    
+    if (results.length === 0) return 'No relevant knowledge found in the database.';
+
+    return results.map(r => 
+      `--- Knowledge Entry ---
+ID: ${r.id}
+Task: ${r.taskTitle}
+Stack: ${r.techStack}
+Outcome: ${r.outcome}
+Reasoning: ${r.reasoning}
+Code:
+\`\`\`
+${r.codeSnippet}
+\`\`\`
+------------------------`
+    ).join('\n\n');
   },
 
   /**
