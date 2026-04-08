@@ -13,6 +13,8 @@ export interface ProjectDetailUiState {
   isDeploying: boolean;
   consoleLogs: string[];
   isConsoleVisible: boolean;
+  isBreakthrough: boolean;
+  failureCount: number;
 }
 
 export const useProjectDetailViewModel = (projectId: string | null) => {
@@ -26,7 +28,9 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
     isBuilding: false,
     isDeploying: false,
     consoleLogs: [],
-    isConsoleVisible: false
+    isConsoleVisible: false,
+    isBreakthrough: false,
+    failureCount: 0
   });
   
   const logcatStopperRef = useRef<(() => Promise<void>) | null>(null);
@@ -67,16 +71,39 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
       const { ProjectRepository } = await import('../lib/repositories/ProjectRepository');
       const { RequirementRepository } = await import('../lib/repositories/RequirementRepository');
       const { LogRepository } = await import('../lib/repositories/LogRepository');
+      const { BreakthroughManager } = await import('../lib/services/BreakthroughManager');
 
       const project = await ProjectRepository.getById(projectId);
       const requirements = await RequirementRepository.getAllByProject(projectId);
       const logs = await LogRepository.getAllByProject(projectId);
-      setState((prev: ProjectDetailUiState) => ({ ...prev, project, requirements, logs, isLoading: false }));
+      
+      const isBreakthrough = BreakthroughManager.isBreakthroughEnabled(projectId);
+      const failureCount = BreakthroughManager.getFailureCount(projectId);
+
+      setState((prev: ProjectDetailUiState) => ({ 
+        ...prev, project, requirements, logs, isBreakthrough, failureCount, isLoading: false 
+      }));
     } catch (e) {
       showToast('プロジェクト情報の読み込みに失敗しました', 'error');
       setState((prev: ProjectDetailUiState) => ({ ...prev, isLoading: false }));
     }
   }, [projectId, showToast]);
+
+  /**
+   * Breakthrough Mode (号令機能) の手動切り替え
+   */
+  const handleToggleBreakthrough = async (enabled: boolean) => {
+    if (!projectId) return;
+    try {
+      const { BreakthroughManager } = await import('../lib/services/BreakthroughManager');
+      BreakthroughManager.setBreakthrough(projectId, enabled);
+      appendLog(enabled ? '[ORBIT] MANUAL BREAKTHROUGH MODE ENABLED (Override)' : '[ORBIT] Breakthrough Mode Disabled.');
+      showToast(enabled ? 'ブレイクスルーモードを有効にしました' : '通常モードに戻りました', 'info');
+      await loadData();
+    } catch (e) {
+      showToast('モードの切り替えに失敗しました', 'error');
+    }
+  };
 
   /**
    * 要件リストを AGENTS.md に同期する
@@ -200,9 +227,6 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
   /**
    * リモート（Git & GAS）との一括同期
    */
-  /**
-   * リモート（Git & GAS）との一括同期
-   */
   const handleSyncRemote = async () => {
     if (!state.project) return;
     showToast('リモートと同期中...', 'info');
@@ -253,17 +277,17 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
     }
 
     try {
+      let buildResult = '';
       if (isTauri) {
         appendLog('[ORBIT] Detecting Tauri project. Running npm run build...');
         const { invoke } = await import('@tauri-apps/api/core');
         // Tauri 側のシェルコマンド実行ツールを使用
-        const res = await invoke<string>('run_shell_command', { 
+        buildResult = await invoke<string>('run_shell_command', { 
           path: state.project.androidPath, 
           command: 'npm', 
           args: ['run', 'tauri', 'build'] 
         });
-        appendLog(res);
-        appendLog('Tauri Build Completed Successfully.');
+        appendLog(buildResult);
       } else {
         const { AndroidExecutor } = await import('../lib/android');
         const success = await AndroidExecutor.runGradle(
@@ -272,11 +296,16 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
           (line) => appendLog(line)
         );
         if (!success) throw new Error('Gradle Build Failed.');
-        appendLog('Android Build Completed Successfully.');
+        buildResult = 'Android Build Completed Successfully.';
+        appendLog(buildResult);
       }
 
       showToast('ビルドが完了しました', 'success');
       const { ProjectRepository } = await import('../lib/repositories/ProjectRepository');
+      const { BreakthroughManager } = await import('../lib/services/BreakthroughManager');
+      
+      BreakthroughManager.recordSuccess(state.project.id);
+      
       await ProjectRepository.update(state.project.id, {
         lastBuildStatus: 'success',
         latestVersion: new Date().toISOString().split('T')[0]
@@ -287,12 +316,20 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
       appendLog(`[CRITICAL] Build Error: ${errorMsg}`);
       showToast('ビルド実行中にエラーが発生しました', 'error');
       
+      const { BreakthroughManager } = await import('../lib/services/BreakthroughManager');
+      const isBT = BreakthroughManager.recordFailure(state.project.id);
+      if (isBT) {
+        appendLog('[BREAKTHROUGH] CONSECUTIVE FAILURES DETECTED. Breakthrough Mode ENABLED.');
+        showToast('連続失敗によりブレイクスルーモードが有効になりました', 'info');
+      }
+
       await LogRepository.add({
         projectId: state.project.id,
         category: 'BUILD_ERROR',
         decision: 'Build failed during execution',
         reason: errorMsg
       });
+      await loadData();
     } finally {
       setState(prev => ({ ...prev, isBuilding: false }));
     }
@@ -452,6 +489,7 @@ export const useProjectDetailViewModel = (projectId: string | null) => {
     handleBuild,
     handleDeploy,
     appendLog,
-    toggleConsole
+    toggleConsole,
+    handleToggleBreakthrough
   };
 };

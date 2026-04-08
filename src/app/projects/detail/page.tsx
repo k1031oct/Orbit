@@ -30,11 +30,14 @@ function ProjectDetailContent() {
     handleSyncRemote,
     handleBuild,
     handleDeploy,
+    handleUpdateProject,
+    handleUpdateRequirement,
     toggleConsole,
-    appendLog
+    appendLog,
+    handleToggleBreakthrough
   } = useProjectDetailViewModel(id);
 
-  const { project, requirements, logs, isLoading, isScanning, isBuilding, isDeploying } = state;
+  const { project, requirements, logs, isLoading, isScanning, isBuilding, isDeploying, isBreakthrough, failureCount } = state;
 
   useEffect(() => {
     if (id) loadData();
@@ -77,9 +80,9 @@ function ProjectDetailContent() {
           <div className="flex flex-col">
             <div className="flex flex-row items-center gap-4">
               <h1 className="orbit-brand-title text-4xl leading-none">{project.name}</h1>
-              <div className="orbit-badge orbit-badge-active">
-                <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.4)]" />
-                <span className="text-[10px]">Mission Active</span>
+              <div className={`orbit-badge ${isBreakthrough ? 'bg-rose-500/20 text-rose-500 border-rose-500/30' : 'orbit-badge-active'}`}>
+                <div className={`w-1 h-1 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.4)] ${isBreakthrough ? 'bg-rose-500 shadow-rose-500' : 'bg-emerald-500 shadow-emerald-500'}`} />
+                <span className="text-[10px]">{isBreakthrough ? 'BREAKTHROUGH MODE' : 'Mission Active'}</span>
               </div>
             </div>
             <p className="text-[9px] text-white/20 font-mono uppercase tracking-[0.3em] mt-1 italic">ENDPOINT: <span className="text-white/40">{project.androidPath}</span></p>
@@ -89,6 +92,21 @@ function ProjectDetailContent() {
         {/* Top-Right: Unified Control Center */}
         <div className="flex flex-row items-center gap-6">
            
+           <div className="flex flex-row items-center gap-3">
+              {failureCount > 0 && !isBreakthrough && (
+                <span className="text-[10px] font-black italic uppercase text-rose-500/40 tracking-wider">Failures: {failureCount}</span>
+              )}
+              <button 
+                onClick={() => handleToggleBreakthrough(!isBreakthrough)}
+                className={`orbit-button px-6 py-4 rounded-2xl flex flex-row items-center gap-3 transition-all ${isBreakthrough ? 'bg-rose-500 text-white border-rose-500 shadow-[0_10px_30px_rgba(244,63,94,0.3)]' : 'bg-white/5 text-white/20 border-white/5 hover:text-white hover:bg-white/10'}`}
+              >
+                <ShieldAlert size={16} />
+                <span className="text-[10px] uppercase font-black tracking-widest">{isBreakthrough ? 'Override ON' : 'Override Off'}</span>
+              </button>
+           </div>
+
+           <div className="w-[1px] h-8 bg-white/5 mx-1" />
+
            <button 
              onClick={() => setIsAddModalOpen(true)}
              className="orbit-button orbit-button-primary px-10 py-5 rounded-2xl shadow-[0_20px_40px_rgba(255,255,255,0.05)]"

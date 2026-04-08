@@ -44,20 +44,25 @@ export const MCPTools = {
    * 規約を遵守してファイルを書き込み、理由を記録する
    */
   async writeGovernedFile(projectId: string, path: string, content: string, reasoning?: string): Promise<{ success: boolean; message: string }> {
-    const res = await GovernanceInterceptor.writeGovernedFile(path, content);
+    const { BreakthroughManager } = await import('../services/BreakthroughManager');
+    const isBreakthrough = BreakthroughManager.isBreakthroughEnabled(projectId);
+    
+    // Breakthrough Mode 時は規約をバイパス（将来的に GovernanceInterceptor 側にロジックを委譲することも検討）
+    const res = await GovernanceInterceptor.writeGovernedFile(path, content, isBreakthrough);
     
     // 意思決定のロギング (SQLite)
     await LogRepository.add({
       projectId,
-      category: 'WRITE_FILE',
+      category: isBreakthrough ? 'BREAKTHROUGH_WRITE' : 'WRITE_FILE',
       decision: `Write to ${path}`,
-      reason: reasoning || (res.success ? 'Standard development' : 'Governance Blocked')
+      reason: (isBreakthrough ? '[BREAKTHROUGH] ' : '') + (reasoning || (res.success ? 'Standard development' : 'Governance Blocked'))
     });
 
     // 成功時、かつ重要なファイル（ViewModel, Repository等）の場合はナレッジベースに仮登録
     if (res.success && reasoning && (path.includes('ViewModel') || path.includes('Repository'))) {
       const { KnowledgeRepository } = await import('../repositories/KnowledgeRepository');
-      const techStack = await KnowledgeRepository.inferTechStack(path.split('src')[0]);
+      const project = await ProjectRepository.getById(projectId);
+      const techStack = await KnowledgeRepository.inferTechStack(project?.androidPath || path.split('src')[0]);
       
       await KnowledgeRepository.add({
         projectId,
@@ -74,27 +79,41 @@ export const MCPTools = {
   },
 
   /**
-   * ナレッジベースから知見を検索する
+   * ナレッジベースから知見を検索する (Local Edition: SearchEngine 統合)
    */
-  async readKnowledge(query: string, techStackFilter?: string): Promise<string> {
+  async readKnowledge(query: string, projectId?: string): Promise<string> {
+    const { SearchEngine } = await import('../services/SearchEngine');
     const { KnowledgeRepository } = await import('../repositories/KnowledgeRepository');
-    const results = await KnowledgeRepository.search(query, techStackFilter);
+    const { BreakthroughManager } = await import('../services/BreakthroughManager');
     
-    if (results.length === 0) return 'No relevant knowledge found in the database.';
+    const project = projectId ? await ProjectRepository.getById(projectId) : null;
+    const currentStack = project ? await KnowledgeRepository.inferTechStack(project.androidPath) : [];
+    
+    const results = await SearchEngine.search(query, currentStack);
+    
+    if (results.length === 0) return 'No relevant knowledge found in the local database.';
 
-    return results.map(r => 
-      `--- Knowledge Entry ---
+    const isBreakthrough = projectId ? BreakthroughManager.isBreakthroughEnabled(projectId) : false;
+    const statusHeader = isBreakthrough ? '[STATUS: BREAKTHROUGH MODE ACTIVE - Constraints Relaxed]\n' : '';
+
+    const output = results.map(r => {
+      // 検索にヒットした＝ナレッジの利用実績としてカウント
+      if (r.id) KnowledgeRepository.recordUsage(r.id);
+      
+      return `--- Knowledge Entry (Local) ---
 ID: ${r.id}
 Task: ${r.taskTitle}
 Stack: ${r.techStack}
 Outcome: ${r.outcome}
 Reasoning: ${r.reasoning}
-Code:
+Code Snippet:
 \`\`\`
 ${r.codeSnippet}
 \`\`\`
-------------------------`
-    ).join('\n\n');
+------------------------------`;
+    }).join('\n\n');
+
+    return statusHeader + output;
   },
 
   /**
@@ -127,6 +146,9 @@ ${r.codeSnippet}
     };
 
     // プラットフォーム別のビルドロジック
+    const { BreakthroughManager } = await import('../services/BreakthroughManager');
+    
+    let buildResult = '';
     switch (project.platform) {
       case 'WINDOWS_TAURI':
         if (onOutput) onOutput('[ORBIT] Platform: WINDOWS_TAURI. Starting production build...');
@@ -137,10 +159,11 @@ ${r.codeSnippet}
           const { stdout, stderr } = await execAsync('npm run build', { cwd: project.androidPath });
           if (onOutput) onOutput(stdout);
           if (stderr && onOutput) onOutput(`[WARN] ${stderr}`);
-          return 'Build Success (Tauri/Windows)';
+          buildResult = 'Build Success (Tauri/Windows)';
         } catch (e) {
-          return `Tauri Build Failed: ${e}`;
+          buildResult = `Tauri Build Failed: ${e}`;
         }
+        break;
 
       case 'ANDROID_KOTLIN':
         if (onOutput) onOutput('[ORBIT] Platform: ANDROID_KOTLIN. Running Gradle assembleDebug...');
@@ -151,13 +174,27 @@ ${r.codeSnippet}
         );
         if (!success) {
           const errorReport = AndroidExecutor.parseBuildLog(fullLog);
-          return `Build Failed.\n${errorReport}`;
+          buildResult = `Build Failed.\n${errorReport}`;
+        } else {
+          buildResult = 'Build Success (Native Android)';
         }
-        return 'Build Success (Native Android)';
+        break;
 
       default:
-        return `Error: Build logic for platform '${project.platform}' is not implemented yet.`;
+        buildResult = `Error: Build logic for platform '${project.platform}' is not implemented yet.`;
     }
+
+    // Breakthrough Manager への通知とモード設定
+    if (buildResult.toLowerCase().includes('success')) {
+      BreakthroughManager.recordSuccess(projectId);
+    } else {
+      const isBreakthrough = BreakthroughManager.recordFailure(projectId);
+      if (isBreakthrough) {
+          buildResult += '\n[BREAKTHROUGH] Threshold exceeded. Breakthrough Mode ENABLED.';
+      }
+    }
+    
+    return buildResult;
   },
 
   /**

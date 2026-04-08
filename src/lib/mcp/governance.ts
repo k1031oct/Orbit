@@ -8,8 +8,9 @@ export const GovernanceInterceptor = {
   /**
    * ガバナンス（規約）に則ってファイルを書き込む
    * 規約違反がある場合は、エラーメッセージを返し、書き込みを拒否する
+   * breakthrough = true の場合は警告付きで強制書き込みを行う
    */
-  async writeGovernedFile(filePath: string, content: string): Promise<{ success: boolean; message: string }> {
+  async writeGovernedFile(filePath: string, content: string, bypass: boolean = false): Promise<{ success: boolean; message: string }> {
     const fileName = path.basename(filePath);
     // 1. 静的解析（規約チェック）
     const violations: string[] = [];
@@ -50,10 +51,15 @@ export const GovernanceInterceptor = {
 
     // 2. 結果の判定
     if (violations.length > 0) {
-      return { 
-        success: false, 
-        message: `--- Governance Violation ---\n${violations.join('\n')}\n--- Please align your code with the PROJECT_CONSTITUTION. ---` 
-      };
+      if (!bypass) {
+        return { 
+          success: false, 
+          message: `--- Governance Violation ---\n${violations.join('\n')}\n--- Please align your code with the PROJECT_CONSTITUTION. ---` 
+        };
+      } else {
+        // BREAKTHROUGH MODE: Allow with strong warning
+        console.warn(`[BREAKTHROUGH] Ignoring governance violations for ${fileName}`);
+      }
     }
 
     // 3. 書き込みの実行 (検証クリア後)

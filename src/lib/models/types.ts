@@ -49,5 +49,6 @@ export interface KnowledgeEntry {
   outcome: 'SUCCESS' | 'FAILURE';
   reasoning: string;
   confidence: number;
+  usageCount?: number;
   timestamp: string;
 }

@@ -80,9 +80,14 @@ export async function getDb(): Promise<Database> {
       outcome TEXT NOT NULL,
       reasoning TEXT,
       confidence REAL DEFAULT 1.0,
+      usageCount INTEGER DEFAULT 0,
       timestamp TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Indexes for faster search
+  dbInstance.run('CREATE INDEX IF NOT EXISTS idx_knowledge_tech ON knowledge_base(techStack)');
+  dbInstance.run('CREATE INDEX IF NOT EXISTS idx_knowledge_title ON knowledge_base(taskTitle)');
 
   dbInstance.run(`
     CREATE TABLE IF NOT EXISTS local_requirements (
