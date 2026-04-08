@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Search, Plus, Settings, Globe, Package, Terminal, 
   RefreshCw, Rocket, Database, Trash2, X, Check,
-  ChevronRight, Brain, Shield, Laptop, Zap, Link as LinkIcon, Edit2
+  ChevronRight, Brain, Shield, Laptop, Zap, Link as LinkIcon, Edit2, ShieldAlert
 } from 'lucide-react';
 import { useHomeViewModel } from '../viewmodels/HomeViewModel';
 import { useProjectDetailViewModel } from '../viewmodels/ProjectDetailViewModel';
@@ -25,7 +25,8 @@ export default function Dashboard() {
     handleAddRequirement,
     handleRemoveRequirement,
     handleChangeRequirementStatus,
-    toggleConsole
+    toggleConsole,
+    handleToggleBreakthrough
   } = useProjectDetailViewModel(selectedProjectId);
 
   const { toasts } = useToast();
@@ -146,6 +147,7 @@ export default function Dashboard() {
               onRemoveRequirement={handleRemoveRequirement}
               onChangeRequirementStatus={handleChangeRequirementStatus}
               onToggleConsole={toggleConsole}
+              onToggleBreakthrough={handleToggleBreakthrough}
               consoleEndRef={consoleEndRef}
             />
           ) : (
@@ -285,6 +287,7 @@ function ProjectDetailView({
   onRemoveRequirement,
   onChangeRequirementStatus,
   onToggleConsole,
+  onToggleBreakthrough,
   consoleEndRef
 }: any) {
   const [newReq, setNewReq] = useState({ title: '', target: 'Core' });
@@ -335,6 +338,17 @@ function ProjectDetailView({
           </div>
 
           <div className="flex flex-row items-center gap-4">
+            {state.failureCount > 0 && !state.isBreakthrough && (
+              <span className="text-[10px] font-black italic uppercase text-rose-500/40 tracking-wider">Failures: {state.failureCount}</span>
+            )}
+            <button 
+              onClick={() => onToggleBreakthrough(!state.isBreakthrough)}
+              className={`orbit-btn rounded-xl flex flex-row items-center gap-3 transition-all ${state.isBreakthrough ? 'bg-rose-500 text-white border-rose-500 shadow-[0_10px_30px_rgba(244,63,94,0.3)]' : 'bg-white/5 text-white/20 border-white/5 hover:text-white hover:bg-white/10'}`}
+            >
+              <ShieldAlert size={14} />
+              <span className="text-[10px] uppercase font-black tracking-widest">{state.isBreakthrough ? 'Override ON' : 'Override Off'}</span>
+            </button>
+            <div className="w-[1px] h-6 bg-white/5 mx-1" />
             <div className="flex flex-row p-1 bg-white/[0.02] border border-white/5 rounded-xl gap-3">
               <button 
                 onClick={onSync} 
