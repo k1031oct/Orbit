@@ -3,3 +3,7 @@
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
+
+
+## 🎯 ACTIVE MISSIONS
+- [x] <!-- REQ_ID: 76 --> VoltAgent/awesome-design-mdの適用機能を追加 (Core)

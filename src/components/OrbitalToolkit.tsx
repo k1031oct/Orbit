@@ -27,21 +27,21 @@ export default function OrbitalToolkit({ projectPath, gitUrl }: ToolkitProps) {
   }
 
   return (
-    <div className="orbit-flex-row orbit-gap-sm animate-fade">
+    <div className="flex flex-row gap-2 animate-fade">
       <button
         onClick={handleOpenVSCode}
-        className="orbit-button-icon border-indigo-500/10 hover:border-indigo-500/40 w-12 h-12"
+        className="w-10 h-10 flex items-center justify-center rounded-md border border-white/10 hover:border-indigo-500/40 bg-white/[0.03] transition-all"
         title="VS Code で開く"
       >
-        <Terminal size={22} className="text-indigo-400" />
+        <Terminal size={18} className="text-white/60" />
       </button>
 
       <button
         onClick={handleOpenStudio}
-        className="orbit-button-icon border-emerald-500/10 hover:border-emerald-500/40 w-12 h-12"
+        className="w-10 h-10 flex items-center justify-center rounded-md border border-white/10 hover:border-emerald-500/40 bg-white/[0.03] transition-all"
         title="Android Studio で開く"
       >
-        <Cpu size={22} className="text-emerald-400" />
+        <Cpu size={18} className="text-white/60" />
       </button>
 
       {gitUrl && (
@@ -49,10 +49,10 @@ export default function OrbitalToolkit({ projectPath, gitUrl }: ToolkitProps) {
           href={gitUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="orbit-button-icon border-fuchsia-500/10 hover:border-fuchsia-500/40 w-12 h-12"
+          className="w-10 h-10 flex items-center justify-center rounded-md border border-white/10 hover:border-fuchsia-500/40 bg-white/[0.03] transition-all"
           title="リポジトリを開く"
         >
-          <GitBranch size={22} className="text-fuchsia-400" />
+          <GitBranch size={18} className="text-white/60" />
         </a>
       )}
     </div>

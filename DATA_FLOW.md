@@ -44,3 +44,8 @@ Orbit のシステムにおいては、本番環境のローカル SQLite デー
 ### Phase 5: Breakthrough Mode (Constraint Bypass) **[NEW]**
 - **Goal**: 既存の知識で解決不能な場合の制約解除.
 - **Flow**: `Consecutive Build Failures` (n > 3) -> `BreakthroughManager` -> Enable Breakthrough Mode -> Bypass Knowledge Constraints -> Pure Reasoning.
+
+### Phase 6: GitHub Integrated Evolution (Self-Empowerment) **[NEW]**
+- **Goal**: 外部（GitHub）の知見を自律的に吸収し、スキルの獲得と自己修復を行う。
+- **Flow**: `Bug/Feature Request` -> `GitHub MCP Search` -> `Pattern Discovery` -> `Skill Acquisition` (自動コンバート) -> `Local Implementation`.
+- **Auto-Healing**: `Build Error` -> `Search GitHub Issues/PRs` -> `Generate Patch` -> `Self-Repair`.

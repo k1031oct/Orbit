@@ -1,32 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;900&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
 
 :root {
-  /* Orbit Absolute Palette (v1.3) */
-  --background: 0 0% 0%;
-  --foreground: 0 0% 98%;
-  --card: 240 6% 8%;
-  --card-hover: 240 6% 12%;
-  --radius-lg: 32px;
-  --radius-md: 18px;
-  --radius-sm: 10px;
+  /* Linear Edition v2 Palette (Strict) */
+  --background: 0 0% 0%;         /* #000000 */
+  --foreground: 0 0% 93%;        /* #eeeeee */
+  --card: 0 0% 3%;               /* #080808 - Sidebar/Panel */
+  --card-hover: 0 0% 6%;
+  
+  --radius-lg: 8px;
+  --radius-md: 6px;
+  --radius-sm: 4px;
+  --radius-xs: 2px;
 
-  /* Spacing Scale */
+  /* Spacing Scale (Engineering Density) */
   --space-xxs: 4px;
   --space-xs: 8px;
-  --space-sm: 16px;
-  --space-md: 24px;
-  --space-lg: 40px;
-  --space-xl: 64px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 20px;
+  --space-xl: 24px;
 
   /* Accents */
-  --indigo: 235 90% 65%;
-  --emerald: 155 85% 55%;
-  --rose: 0 85% 60%;
+  --indigo: 236 53% 60%;      /* #5e6ad2 - Accent */
+  --emerald: 142 70% 58%;     /* #4ade80 - Success */
+  --rose: 0 91% 71%;          /* #f87171 - Error */
   
-  /* Text */
-  --text-primary: 0 0% 100%;
-  --text-secondary: 240 5% 70%;
-  --text-muted: 240 5% 30%;
+  /* Text & Border */
+  --text-primary: 0 0% 93%;      /* #eeeeee */
+  --text-secondary: 0 0% 65%;
+  --text-muted: 0 0% 53%;        /* #888888 */
+  
+  --border-white: #1f1f1f;
 }
 
 * {
@@ -36,9 +40,11 @@
 }
 
 body {
-  background-color: #000;
+  background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: 'Inter', 'Noto Sans JP', sans-serif;
+  font-feature-settings: "cv02", "cv05", "cv08", "cv11";
+  font-weight: 510;
   height: 100vh;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
@@ -47,10 +53,10 @@ body {
 /* --- ORBIT UNIFIED UI KIT --- */
 
 .orbit-brand-title {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 950;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: -0.06em;
+  letter-spacing: 0.15em;
   font-style: italic;
   display: inline-block;
 }
@@ -59,31 +65,30 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-sm);
-  padding: 14px 28px;
-  border-radius: var(--radius-sm);
-  font-weight: 900;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.25em;
+  gap: var(--space-xs);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 510;
+  font-size: 13px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
-  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border-white);
   font-family: 'Inter', sans-serif;
-  height: 48px;
+  height: 36px;
   white-space: nowrap;
 }
 
 .orbit-btn-primary {
-  background: #ffffff;
-  color: #000000;
+  background: hsl(var(--indigo));
+  color: #ffffff;
+  border-color: hsla(var(--indigo), 0.5);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .orbit-btn-primary:hover {
-  background: hsl(var(--indigo));
-  color: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: 0 20px 40px -10px hsla(var(--indigo), 0.5);
+  background: hsl(var(--indigo) / 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(94, 106, 210, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .orbit-btn-ghost {
@@ -100,32 +105,29 @@ body {
 
 .orbit-card-refined {
   background: hsl(var(--card));
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-white);
   border-radius: var(--radius-md);
   padding: var(--space-md);
-  transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
-  box-shadow: 0 4px 20px -10px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
 }
 
 .orbit-card-interactive:hover {
   background: hsl(var(--card-hover));
   border-color: hsla(var(--indigo), 0.3);
-  transform: translateY(-4px);
-  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
 .orbit-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 2px 8px;
   border-radius: 9999px;
-  font-size: 8px;
-  font-weight: 950;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  background: hsla(255, 255%, 255%, 0.03);
-  border: 1px solid hsla(255, 255%, 255%, 0.05);
+  font-size: 11px;
+  font-weight: 500;
+  background: hsla(255, 255%, 255%, 0.05);
+  border: 1px solid var(--border-white);
+  color: hsl(var(--text-secondary));
 }
 
 /* --- ATOMIC PADDING & LAYOUT (v1.3 FIX) --- */
@@ -179,40 +181,39 @@ body {
 .orbit-dashboard {
   height: 100vh;
   width: 100vw;
-  padding: var(--space-xl);
+  padding: var(--space-md);
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  background: #000;
+  background: hsl(var(--background));
 }
 
 .orbit-command-hull {
   flex: 1;
   display: flex;
   flex-direction: row;
-  gap: var(--space-xl);
+  gap: var(--space-md);
   min-height: 0;
 }
 
 .orbit-sidebar {
-  width: 380px;
+  width: 300px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: var(--space-sm);
   flex-shrink: 0;
-  padding-right: var(--space-md);
 }
 
 .orbit-canvas {
   flex: 1;
   background: hsl(var(--card));
-  border: 1px solid hsla(255, 255%, 255%, 0.05);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-white);
+  border-radius: var(--radius-md);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: 0 60px 120px -30px rgba(0, 0, 0, 1);
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.4);
 }
 
 .orbit-hud {
@@ -272,7 +273,7 @@ body {
 @keyframes fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #1f1f1f; border-radius: 10px; }
 
 /* --- FORM CONTROLS --- */
 .orbit-label {

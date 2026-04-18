@@ -56,28 +56,28 @@ export default function Dashboard() {
   return (
     <div className="orbit-dashboard animate-fade">
       {/* Header HUD: Branding & Global Actions */}
-      <header className="shrink-0 flex flex-row items-center justify-between px-2">
-        <div className="flex flex-row items-center gap-10">
+      <header className="shrink-0 flex flex-row items-center justify-between px-4 py-2 border-b border-white/[0.05]">
+        <div className="flex flex-row items-center gap-8">
           <div className="flex flex-col">
-            <h1 className="orbit-brand-title text-5xl leading-none italic">ORBIT</h1>
-            <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.5em] italic mt-1 font-mono">Control Engine v0.5.3</p>
+            <h1 className="orbit-brand-title text-xl leading-none italic">ORBIT</h1>
+            <p className="text-[8px] text-white/30 font-mono uppercase tracking-[0.2em] mt-1">Command Center (Linear Edition)</p>
           </div>
-          <div className="h-10 w-[1px] bg-white/5" />
-          <nav className="flex flex-row items-center gap-8 text-[11px] font-black uppercase tracking-widest italic text-white/40">
-             <span className="text-indigo-400 cursor-default">Dashboard</span>
+          <div className="h-6 w-[1px] bg-white/10" />
+          <nav className="flex flex-row items-center gap-6 text-[12px] font-medium text-white/40">
+             <span className="text-white cursor-default">Dashboard</span>
              <Link href="/settings" className="hover:text-white transition-colors">Settings</Link>
           </nav>
         </div>
 
-        <div className="flex flex-row items-center gap-6">
+        <div className="flex flex-row items-center gap-4">
           <button 
             onClick={() => setAddModalOpen(true)}
-            className="orbit-btn orbit-btn-primary h-12 px-8"
+            className="orbit-btn orbit-btn-primary"
           >
-            <Plus size={16} /> <span>Initialize Node</span>
+            <Plus size={14} /> <span>Initialize Node</span>
           </button>
-          <div className="w-12 h-12 bg-white/5 flex items-center justify-center rounded-xl">
-             <Brain size={20} className="text-white/20" />
+          <div className="w-9 h-9 border border-white/10 flex items-center justify-center rounded-md">
+             <Brain size={16} className="text-white/40" />
           </div>
         </div>
       </header>
@@ -86,14 +86,14 @@ export default function Dashboard() {
       <main className="orbit-command-hull">
         
         {/* Sidebar: Project Registry */}
-        <aside className="orbit-sidebar">
-          <div className="flex flex-row items-center justify-between px-2 opacity-40">
-            <div className="flex flex-row items-center gap-4">
-              <Database size={16} />
-              <h2 className="text-[11px] font-black uppercase tracking-[0.4em] italic">Registry</h2>
+        <aside className="orbit-sidebar bg-hsl(var(--card)) border-r border-white/5 py-4">
+          <div className="flex flex-row items-center justify-between px-4 mb-4 opacity-40">
+            <div className="flex flex-row items-center gap-3">
+              <Database size={14} />
+              <h2 className="text-[10px] font-semibold uppercase tracking-wider">Registry</h2>
             </div>
             <button onClick={handleScan} className="hover:text-indigo-400 transition-colors">
-              <RefreshCw size={14} className={homeState.isScanning ? 'animate-spin' : ''} />
+              <RefreshCw size={12} className={homeState.isScanning ? 'animate-spin' : ''} />
             </button>
           </div>
 
@@ -102,16 +102,16 @@ export default function Dashboard() {
               <div 
                 key={p.id}
                 onClick={() => setSelectedProjectId(p.id)}
-                className={`orbit-card-refined orbit-card-interactive cursor-pointer group flex flex-col gap-4 ${selectedProjectId === p.id ? 'border-indigo-500/40 bg-indigo-500/5' : ''}`}
+                className={`orbit-card-refined orbit-card-interactive cursor-pointer group flex flex-col gap-2 ${selectedProjectId === p.id ? 'border-indigo-500/40 bg-white/[0.03]' : ''}`}
               >
                 <div className="flex flex-row items-center justify-between">
-                  <div className={`orbit-badge ${selectedProjectId === p.id ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/20' : 'text-white/20'}`}>
+                  <div className={`orbit-badge ${selectedProjectId === p.id ? 'text-indigo-400 border-indigo-500/20' : ''}`}>
                     STANDBY
                   </div>
-                  <span className="text-[10px] font-mono text-white/10 group-hover:text-white/30 transition-colors">NODE_{p.id.slice(0,4)}</span>
+                  <span className="text-[9px] font-mono text-white/10">NODE_{p.id.slice(0,4)}</span>
                 </div>
                 <div className="flex flex-row items-center justify-between">
-                  <h3 className={`text-2xl font-black italic tracking-tighter uppercase ${selectedProjectId === p.id ? 'text-white' : 'text-white/60'}`}>
+                  <h3 className={`text-md font-semibold tracking-tight ${selectedProjectId === p.id ? 'text-white' : 'text-white/60'}`}>
                     {p.name}
                   </h3>
                   <button 
@@ -124,16 +124,16 @@ export default function Dashboard() {
               </div>
             ))}
             {homeState.projects.length === 0 && (
-              <div className="py-20 flex flex-col items-center justify-center opacity-10 gap-4">
-                 <Search size={48} />
-                 <p className="text-xs font-mono uppercase tracking-widest">Registry Empty</p>
+              <div className="py-12 flex flex-col items-center justify-center opacity-5 gap-3">
+                 <Search size={32} />
+                 <p className="text-[10px] font-mono uppercase tracking-widest">Registry Empty</p>
               </div>
             )}
           </div>
         </aside>
 
         {/* Main Canvas: Mission Control */}
-        <section className="orbit-canvas">
+        <section className="orbit-canvas border-none bg-black">
           {selectedProjectId ? (
             <ProjectDetailView 
               projectId={selectedProjectId} 
@@ -151,11 +151,11 @@ export default function Dashboard() {
               consoleEndRef={consoleEndRef}
             />
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center gap-6 opacity-20">
-               <Zap size={64} className="text-indigo-400 animate-pulse" />
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 opacity-10">
+               <Zap size={48} className="text-indigo-400" />
                <div className="text-center">
-                 <h2 className="text-2xl font-black italic tracking-tighter uppercase">No Active Mission</h2>
-                 <p className="text-[10px] font-mono tracking-[0.4em] uppercase mt-2">Select a tactical node from registry</p>
+                 <h2 className="text-lg font-bold tracking-tight">System Standby</h2>
+                 <p className="text-[9px] font-mono tracking-widest uppercase mt-1">Awaiting Tactical Selection</p>
                </div>
             </div>
           )}
@@ -163,13 +163,13 @@ export default function Dashboard() {
       </main>
 
       {/* Footer HUD: Heartbeat & Logs */}
-      <footer className="orbit-hud">
-        <div className="flex flex-row items-center gap-10">
-          <div className="flex flex-row items-center gap-3 text-indigo-400">
-             <Zap size={16} fill="currentColor" />
-             <span className="text-[11px] font-black uppercase tracking-[0.4em] italic">Heartbeat</span>
+      <footer className="h-10 px-4 border-t border-white/[0.05] flex items-center bg-white/[0.02]">
+        <div className="flex flex-row items-center gap-6 w-full">
+          <div className="flex flex-row items-center gap-2 text-indigo-400">
+             <Zap size={14} fill="currentColor" />
+             <span className="text-[10px] font-semibold uppercase tracking-wider">Heartbeat</span>
           </div>
-          <div className="h-6 w-[1px] bg-white/5" />
+          <div className="h-4 w-[1px] bg-white/10" />
           <div className="flex-1 flex flex-row items-center gap-6 overflow-hidden">
             {toasts.length > 0 ? (
               toasts.map((t, i) => (
@@ -325,16 +325,16 @@ function ProjectDetailView({
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Detail Header: Interactive & Localized */}
-      <header className="p-10 pb-0 shrink-0">
+      <header className="px-10 py-6 pb-0 shrink-0">
         <div className="flex flex-row items-center justify-between">
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-row items-center gap-4">
-              <div className="p-3 bg-indigo-500/20 text-indigo-400 rounded-xl">
-                 <Package size={24} />
+          <div className="flex flex-col gap-0.5">
+            <div className="flex flex-row items-center gap-3">
+              <div className="p-1.5 bg-indigo-500/5 text-indigo-400 rounded border border-indigo-500/10">
+                 <Package size={18} />
               </div>
-              <h2 className="orbit-brand-title text-4xl italic text-white uppercase">{project?.name}</h2>
+              <h2 className="text-xl font-bold text-white tracking-tight">{project?.name}</h2>
             </div>
-            <p className="text-[10px] font-mono tracking-[0.3em] uppercase text-white/20 mt-2 italic px-2">MISSION ACTIVE | {project?.androidPath}</p>
+            <p className="text-[10px] font-mono text-white/10 mt-1">{project?.androidPath}</p>
           </div>
 
           <div className="flex flex-row items-center gap-4">
@@ -349,35 +349,32 @@ function ProjectDetailView({
               <span className="text-[10px] uppercase font-black tracking-widest">{state.isBreakthrough ? 'Override ON' : 'Override Off'}</span>
             </button>
             <div className="w-[1px] h-6 bg-white/5 mx-1" />
-            <div className="flex flex-row p-1 bg-white/[0.02] border border-white/5 rounded-xl gap-3">
+            <div className="flex flex-row p-1 bg-white/[0.03] border border-white/[0.05] rounded-md gap-1">
               <button 
                 onClick={onSync} 
-                title="同期: リモートから最新の要件・コードを読み込みます"
-                className="orbit-btn orbit-btn-ghost border-none px-6"
+                className="orbit-btn border-none px-3"
               >
-                 <Globe size={14} className="text-indigo-400 opacity-60" />
-                 <span>同期</span>
+                 <Globe size={14} className="text-white/40" />
+                 <span>Sync</span>
               </button>
               <button 
                 onClick={onBuild} 
-                title="ビルド: ソースコードから実行バイナリ(APK)を生成します"
-                className={`orbit-btn orbit-btn-ghost border-none px-6 ${state.isBuilding ? 'animate-pulse text-indigo-400' : ''}`}
+                className={`orbit-btn border-none px-3 ${state.isBuilding ? 'animate-pulse text-indigo-400' : ''}`}
               >
-                 <Zap size={14} className="text-indigo-400 opacity-60" />
-                 <span>ビルド</span>
+                 <Zap size={14} className="text-white/40" />
+                 <span>Build</span>
               </button>
               <button 
                 onClick={onDeploy} 
-                title="配備: ビルドしたアプリを実機へインストール・起動します"
-                className={`orbit-btn orbit-btn-ghost border-none px-6 ${state.isDeploying ? 'animate-pulse text-indigo-400' : ''}`}
+                className={`orbit-btn border-none px-3 ${state.isDeploying ? 'animate-pulse text-indigo-400' : ''}`}
               >
-                 <Rocket size={14} className="text-indigo-400 opacity-60" />
-                 <span>配備</span>
+                 <Rocket size={14} className="text-white/40" />
+                 <span>Deploy</span>
               </button>
-              <div className="w-[1px] h-6 bg-white/5 mx-2" />
-              <button onClick={() => onToggleConsole()} className="orbit-btn orbit-btn-ghost border-none px-6">
+              <div className="w-[1px] h-4 bg-white/10 self-center mx-1" />
+              <button onClick={() => onToggleConsole()} className="orbit-btn border-none px-3">
                  <Terminal size={14} className="text-white/40" />
-                 <span>コンソール</span>
+                 <span>Console</span>
               </button>
             </div>
           </div>
@@ -420,16 +417,16 @@ function ProjectDetailView({
               </div>
 
               {state.requirements.map((req: any) => (
-                <div key={req.id} className="orbit-card-refined p-8 bg-white/[0.01] hover:bg-white/[0.03] flex flex-row items-center gap-8 group animate-fade relative border-white/5 transition-all">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${req.status === 'Done' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' : 'border-white/10 text-white/5'}`}>
-                       {req.status === 'Done' && <Check size={16} />}
+                <div key={req.id} className="orbit-card-refined p-4 bg-white/[0.01] hover:bg-white/[0.03] flex flex-row items-center gap-4 group animate-fade relative border-white/5 transition-all">
+                  <div className="flex flex-col items-center">
+                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${req.status === 'Done' ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400' : 'border-white/10 text-white/10'}`}>
+                       {req.status === 'Done' && <Check size={12} />}
                     </div>
                   </div>
                   
-                  <div className="flex-1 flex flex-col gap-1">
-                    <div className="flex flex-row items-center gap-4">
-                       <span className="text-[9px] font-mono text-indigo-500/40 font-bold uppercase tracking-widest">{req.target || 'Core'}</span>
+                  <div className="flex-1 flex flex-col gap-0.5">
+                    <div className="flex flex-row items-center gap-3">
+                       <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${req.target === 'UI' ? 'text-indigo-400 border-indigo-500/20 bg-indigo-500/5' : 'text-white/30 border-white/10'}`}>{req.target || 'Core'}</span>
                        {editingId === req.id && editingField === 'title' ? (
                           <div className="flex flex-row items-center gap-2 flex-1">
                              <input 
@@ -447,8 +444,8 @@ function ProjectDetailView({
                             onClick={() => startEdit(req.id, 'title', req.title)}
                             className="flex flex-row items-center gap-3 cursor-text group/title"
                           >
-                            <h4 className="text-xl font-black italic tracking-tighter uppercase text-white/80 group-hover/title:text-white transition-colors">{req.title}</h4>
-                            <Edit2 size={12} className="opacity-0 group-hover/title:opacity-40" />
+                            <h4 className="text-sm font-semibold text-white/80 group-hover/title:text-white transition-colors">{req.title}</h4>
+                            <Edit2 size={10} className="opacity-0 group-hover/title:opacity-40" />
                           </div>
                        )}
                     </div>
