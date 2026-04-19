@@ -56,30 +56,45 @@ export default function Dashboard() {
   return (
     <div className="orbit-dashboard animate-fade">
       {/* Header HUD: Branding & Global Actions */}
-      <header className="shrink-0 flex flex-row items-center justify-between px-4 py-2 border-b border-white/[0.05]">
-        <div className="flex flex-row items-center gap-8">
-          <div className="flex flex-col">
-            <h1 className="orbit-brand-title text-xl leading-none italic">ORBIT</h1>
-            <p className="text-[8px] text-white/30 font-mono uppercase tracking-[0.2em] mt-1">Command Center (Linear Edition)</p>
+      <header className="shrink-0 flex flex-col border-b border-white/[0.05]">
+        <div className="flex flex-row items-center justify-between px-4 py-2">
+          <div className="flex flex-row items-center gap-8">
+            <div className="flex flex-col">
+              <h1 className="orbit-brand-title text-xl leading-none italic">ORBIT</h1>
+              <p className="text-[8px] text-white/30 font-mono uppercase tracking-[0.2em] mt-1">Command Center (Linear Edition)</p>
+            </div>
+            <div className="h-6 w-[1px] bg-white/10" />
+            <nav className="flex flex-row items-center gap-6 text-[12px] font-medium text-white/40">
+               <span className="text-white cursor-default">Dashboard</span>
+               <Link href="/settings" className="hover:text-white transition-colors">Settings</Link>
+            </nav>
           </div>
-          <div className="h-6 w-[1px] bg-white/10" />
-          <nav className="flex flex-row items-center gap-6 text-[12px] font-medium text-white/40">
-             <span className="text-white cursor-default">Dashboard</span>
-             <Link href="/settings" className="hover:text-white transition-colors">Settings</Link>
-          </nav>
+
+          <div className="flex flex-row items-center gap-4">
+            <button 
+              onClick={() => setAddModalOpen(true)}
+              className="orbit-btn orbit-btn-primary"
+            >
+              <Plus size={14} /> <span>Initialize Node</span>
+            </button>
+            <div className="w-9 h-9 border border-white/10 flex items-center justify-center rounded-md">
+               <Brain size={16} className={`transition-all ${homeState.modelDownloadProgress !== null ? 'text-indigo-400 animate-pulse' : 'text-white/40'}`} />
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-row items-center gap-4">
-          <button 
-            onClick={() => setAddModalOpen(true)}
-            className="orbit-btn orbit-btn-primary"
-          >
-            <Plus size={14} /> <span>Initialize Node</span>
-          </button>
-          <div className="w-9 h-9 border border-white/10 flex items-center justify-center rounded-md">
-             <Brain size={16} className="text-white/40" />
+        {/* AI Model Sync Progress Bar */}
+        {homeState.modelDownloadProgress !== null && (
+          <div className="h-[2px] w-full bg-white/5 relative overflow-hidden">
+            <div 
+              className="absolute top-0 left-0 h-full bg-indigo-500 shadow-[0_0_10px_#6366f1] transition-all duration-300" 
+              style={{ width: `${homeState.modelDownloadProgress}%` }}
+            />
+            <div className="absolute top-1 left-4 flex flex-row items-center gap-2 opacity-50">
+               <span className="text-[8px] font-black italic uppercase tracking-widest text-indigo-400">Syncing Neural Core: {Math.round(homeState.modelDownloadProgress)}%</span>
+            </div>
           </div>
-        </div>
+        )}
       </header>
 
       {/* Primary Command Hull */}

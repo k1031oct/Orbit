@@ -5,6 +5,7 @@ import { LogRepository } from '../lib/repositories/LogRepository';
 import { SettingRepository } from '../lib/repositories/SettingRepository';
 import { Project } from '../lib/models/types';
 import { GitRepository } from '../lib/repositories/GitRepository';
+import { AiRepository } from '../lib/repositories/AiRepository';
 
 export interface HomeUiState {
   projects: Project[];
@@ -12,6 +13,7 @@ export interface HomeUiState {
   isScanning: boolean;
   isAddModalOpen: boolean;
   workspaceRoot: string | null;
+  modelDownloadProgress: number | null;
 }
 
 export const useHomeViewModel = () => {
@@ -22,6 +24,7 @@ export const useHomeViewModel = () => {
     isScanning: false,
     isAddModalOpen: false,
     workspaceRoot: null,
+    modelDownloadProgress: null,
   });
 
   const loadData = useCallback(async () => {
@@ -30,6 +33,22 @@ export const useHomeViewModel = () => {
       const projects = await ProjectRepository.getAll();
       const workspaceRoot = await SettingRepository.get('workspace_root');
       setState((prev: HomeUiState) => ({ ...prev, projects, workspaceRoot, isLoading: false }));
+      
+      // Local AI Model Check & Auto-Download
+      const isAiReady = await AiRepository.checkModelReady();
+      if (!isAiReady) {
+        showToast('Local AI モデルを検出できません。自動セットアップを開始します...', 'info');
+        AiRepository.startModelDownload((progress) => {
+          setState((prev: HomeUiState) => ({ ...prev, modelDownloadProgress: progress }));
+          if (progress >= 100) {
+            showToast('Local AI のセットアップが完了しました', 'success');
+            setTimeout(() => setState(p => ({ ...p, modelDownloadProgress: null })), 3000);
+          }
+        }).catch(err => {
+          showToast(`AI セットアップ失敗: ${err}`, 'error');
+          setState(p => ({ ...p, modelDownloadProgress: null }));
+        });
+      }
     } catch (e) {
       showToast('データの読み込みに失敗しました', 'error');
       setState((prev: HomeUiState) => ({ ...prev, isLoading: false }));

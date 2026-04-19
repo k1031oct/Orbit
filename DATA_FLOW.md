@@ -20,7 +20,8 @@ Orbit のシステムにおいては、本番環境のローカル SQLite デー
                ├─ `write_governed_file`: 規約（命名、XML禁止）を物理的に強制。
                ├─ `build_node`: Gradle ビルドログをパースして構造化エラーを返却。
                ├─ `deploy_node`: UI XML をダンプし、初期画面の物理監査を行う。
-               └─ `search_knowledge`: 3段階フィルタリング検索エンジンを呼び出し。 **[NEW]**
+               ├─ `search_knowledge`: 3段階フィルタリング検索エンジンを呼び出し。
+               └─ `ai_router`: 内部 Gemma 推論エンジンまたは外部 API へリクエストをルーティング。 **[NEW]**
 
 ## フェーズ別データフロー
 
@@ -49,3 +50,8 @@ Orbit のシステムにおいては、本番環境のローカル SQLite デー
 - **Goal**: 外部（GitHub）の知見を自律的に吸収し、スキルの獲得と自己修復を行う。
 - **Flow**: `Bug/Feature Request` -> `GitHub MCP Search` -> `Pattern Discovery` -> `Skill Acquisition` (自動コンバート) -> `Local Implementation`.
 - **Auto-Healing**: `Build Error` -> `Search GitHub Issues/PRs` -> `Generate Patch` -> `Self-Repair`.
+
+### Phase 7: Integrated Local LLM Inference (Self-Sovereign) **[NEW]**
+- **Goal**: 外部 API や Ollama に依存せず、Orbit 内部で推論を完結させる。
+- **Flow**: `Request` -> `AiRepository` -> `InternalRunner (Tauri Sidecar)` -> `Gemma-2-2B (GGUF)` -> `Response`.
+- **Logic**: ビルドエラーの即時解析や、コード保存時のリアルタイム・ガバナンス・チェックに使用。

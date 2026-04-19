@@ -28,3 +28,8 @@ yarn-error.log*
 # OS Files
 .DS_Store
 Thumbs.db
+
+# Binaries & Large Models
+src-tauri/bin/*.exe
+src-tauri/bin/*.dll
+llama_bin.zip

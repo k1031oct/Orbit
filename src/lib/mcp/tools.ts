@@ -2,6 +2,7 @@ import { ProjectRepository } from '../repositories/ProjectRepository';
 import { RequirementRepository } from '../repositories/RequirementRepository';
 import { LogRepository } from '../repositories/LogRepository';
 import { AndroidExecutor } from '../android';
+import { AiRepository } from '../repositories/AiRepository';
 import { GovernanceInterceptor } from './governance';
 import fs from 'fs';
 import path from 'path';
@@ -286,12 +287,26 @@ ${r.codeSnippet}
             return `Repair Success at iteration ${i}. Project is now building.`;
         }
         
-        // ログ解析
-        const errorReport = buildResult; 
+        // ログ解析 (Internal AI を使用)
+        if (onOutput) onOutput(`[REPAIR ATTEMPT ${i}] Analyzing build logs with internal Gemma...`);
         
-        // 本来はここでエージェント（LLM）に対して「このエラーを直して」とプロンプトを送るが、
-        // Orbit 基盤としては「ログを構造化して次に繋げる」までを担当。
-        if (onOutput) onOutput(`[REPAIR ATTEMPT ${i}] Analyzing errors...\n${errorReport}`);
+        try {
+            const analysis = await AiRepository.generate({
+                prompt: `以下のビルドエラーログを解析し、原因と想定される修正方法を簡潔に回答してください。\n\nログ:\n${buildResult}`,
+                provider: 'INTERNAL'
+            });
+            
+            if (onOutput) onOutput(`[INTERNAL_AI ANALYSIS] ${analysis}`);
+            
+            await LogRepository.add({
+                projectId,
+                category: 'AUTONOMOUS_REPAIR',
+                decision: `Repair Attempt ${i} Analysis`,
+                reason: analysis
+            });
+        } catch (aiError) {
+            if (onOutput) onOutput(`[WARN] Internal AI analysis failed: ${aiError}`);
+        }
         
         // 開発エージェントはこの出力を受け取り、ファイルを修正 (write_governed_file) してから、
         // 再度 verify_mission または autonomous_repair を呼ぶ。

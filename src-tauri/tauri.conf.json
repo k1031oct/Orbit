@@ -36,6 +36,9 @@
       "icons/icon.ico"
     ],
     "publisher": "k1031oct",
+    "externalBin": [
+      "bin/llama-cli"
+    ],
     "windows": {
       "wix": {
         "language": "en-US",

@@ -3,6 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 use base64::{Engine as _, engine::general_purpose};
 mod scan;
+mod ai;
 
 #[tauri::command]
 fn get_app_data_path(app: tauri::AppHandle) -> PathBuf {
@@ -215,7 +216,10 @@ pub fn run() {
             scan_projects,
             scaffold_project,
             run_shell_command,
-            sync_missions
+            sync_missions,
+            ai::model_manager::check_model_downloaded,
+            ai::model_manager::download_model,
+            ai::runner::generate_text_internal
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
